@@ -10,6 +10,9 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Calendar, Clock, MapPin, Plus, Trash2, ExternalLink, Upload, X } from "lucide-react"
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css"
+import { useRef } from "react"
 
 interface Event {
   id: string
@@ -25,6 +28,7 @@ interface Event {
 export default function UpcomingEvents() {
   const [events, setEvents] = useState<Event[]>([])
   const [isDialogOpen, setIsDialogOpen] = useState(false)
+  const [imageError, setImageError] = useState(false)
   const [formData, setFormData] = useState({
     heading: "",
     location: "",
@@ -36,9 +40,18 @@ export default function UpcomingEvents() {
   })
 
   const handleInputChange = (field: string, value: string) => {
+    if (field === "date" && value) {
+      const parsedDate = new Date(value)
+      if (isNaN(parsedDate.getTime())) {
+        alert("Invalid date")
+        return
+      }
+    }
     setFormData((prev) => ({ ...prev, [field]: value }))
   }
 
+
+  // Handle Image Upload
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file) {
@@ -46,6 +59,7 @@ export default function UpcomingEvents() {
       reader.onload = (event) => {
         const result = event.target?.result as string
         setFormData((prev) => ({ ...prev, image: result }))
+        setImageError(false)
       }
       reader.readAsDataURL(file)
     }
@@ -55,9 +69,33 @@ export default function UpcomingEvents() {
     setFormData((prev) => ({ ...prev, image: "" }))
   }
 
+  // Removed duplicate handleSubmit function
+
+  const handleRemoveEvent = (id: string) => {
+    setEvents((prev) => prev.filter((event) => event.id !== id))
+  }
+
+  // Drag and Drop Handling
+  const { getRootProps, getInputProps } = useDropzone({
+    accept: "image/*",
+    onDrop: (acceptedFiles) => {
+      const file = acceptedFiles[0]
+      if (file) {
+        const reader = new FileReader()
+        reader.onload = (event) => {
+          const result = event.target?.result as string
+          setFormData((prev) => ({ ...prev, image: result }))
+          setImageError(false)
+        }
+        reader.readAsDataURL(file)
+      }
+    },
+  })
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
 
+    // Validation
     if (
       !formData.heading ||
       !formData.location ||
@@ -71,12 +109,16 @@ export default function UpcomingEvents() {
       return
     }
 
+    // Create new event
     const newEvent: Event = {
       id: Date.now().toString(),
       ...formData,
     }
 
+    // Update events state
     setEvents((prev) => [...prev, newEvent])
+
+    // Reset form
     setFormData({
       heading: "",
       location: "",
@@ -87,10 +129,6 @@ export default function UpcomingEvents() {
       image: "",
     })
     setIsDialogOpen(false)
-  }
-
-  const handleRemoveEvent = (id: string) => {
-    setEvents((prev) => prev.filter((event) => event.id !== id))
   }
 
   return (
@@ -187,19 +225,23 @@ export default function UpcomingEvents() {
                       />
                     </div>
 
+                    {/* Inside the event form where you are using DatePicker: */}
                     <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <Label htmlFor="date">Date *</Label>
-                        <Input
+                      <div className="flex flex-col gap-2">
+                        <Label htmlFor="date">Date</Label>
+                        <DatePicker
                           id="date"
-                          type="date"
-                          value={formData.date}
-                          onChange={(e) => handleInputChange("date", e.target.value)}
+                          selected={formData.date ? new Date(formData.date) : null}  // Check if the date is valid
+                          onChange={(date: Date | null) => handleInputChange("date", date ? date.toISOString().split('T')[0] : "")}  // Update formData.date
+                          dateFormat="yyyy-MM-dd"
+                          className="bg-transparent border border-neutral-600 text-white px-2 py-1 rounded-sm w-fit"
+                          placeholderText="Select a date"
                           required
                         />
+
                       </div>
-                      <div>
-                        <Label htmlFor="time">Time *</Label>
+                      <div className="flex flex-col gap-2">
+                        <Label htmlFor="time">Time</Label>
                         <Input
                           id="time"
                           type="time"
@@ -209,6 +251,7 @@ export default function UpcomingEvents() {
                         />
                       </div>
                     </div>
+
 
                     <div>
                       <Label htmlFor="description">Description *</Label>
@@ -293,10 +336,22 @@ export default function UpcomingEvents() {
                         <MapPin className="w-4 h-4" />
                         <span className="text-white">Location:</span> {event.location}
                       </p>
+
                       <p className="flex items-center gap-2">
                         <Calendar className="w-4 h-4" />
-                        <span className="text-white">Date:</span> {new Date(event.date).toLocaleDateString()}
+                        <span className="text-white">Date:</span>
+                        <DatePicker
+                          id="date"
+                          selected={formData.date ? new Date(formData.date) : null}  // Check if the date is valid
+                          onChange={(date: Date | null) => handleInputChange("date", date ? date.toISOString().split('T')[0] : "")}  // Update formData.date
+                          dateFormat="yyyy-MM-dd"
+                          className="bg-transparent border border-neutral-600 text-white px-2 py-1 rounded-sm w-fit"
+                          placeholderText="Select a date"
+                          required
+                        />
+
                       </p>
+
                       <p className="flex items-center gap-2">
                         <Clock className="w-4 h-4" />
                         <span className="text-white">Time:</span> {event.time}
@@ -324,3 +379,47 @@ export default function UpcomingEvents() {
     </div>
   )
 }
+function useDropzone({
+  accept,
+  onDrop,
+}: {
+  accept: string
+  onDrop: (acceptedFiles: File[]) => void
+}) {
+  const inputRef = useRef<HTMLInputElement>(null)
+
+  const getRootProps = () => ({
+    onClick: () => inputRef.current?.click(),
+    onDragOver: (e: React.DragEvent) => {
+      e.preventDefault()
+      e.stopPropagation()
+    },
+    onDrop: (e: React.DragEvent) => {
+      e.preventDefault()
+      e.stopPropagation()
+      const files = Array.from(e.dataTransfer.files).filter((file) =>
+        accept ? file.type.startsWith(accept.split("/")[0]) : true
+      )
+      if (files.length > 0) {
+        onDrop(files)
+      }
+    },
+    style: { cursor: "pointer" },
+  })
+
+  const getInputProps = () => ({
+    type: "file",
+    accept,
+    ref: inputRef,
+    style: { display: "none" },
+    onChange: (e: React.ChangeEvent<HTMLInputElement>) => {
+      const files = Array.from(e.target.files ?? [])
+      if (files.length > 0) {
+        onDrop(files)
+      }
+    },
+  })
+
+  return { getRootProps, getInputProps }
+}
+

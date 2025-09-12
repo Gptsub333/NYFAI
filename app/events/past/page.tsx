@@ -1,7 +1,6 @@
 "use client"
 
 import type React from "react"
-
 import { useState } from "react"
 import Link from "next/link"
 import Image from "next/image"
@@ -11,6 +10,8 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Plus, Trash2, Upload, X } from "lucide-react"
+import DatePicker from "react-datepicker"
+import "react-datepicker/dist/react-datepicker.css"
 
 interface PastEvent {
   id: string
@@ -37,7 +38,7 @@ export default function Past() {
       image: "/nyfai_event.avif",
     },
   ])
-
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [formData, setFormData] = useState({
     heading: "",
@@ -170,6 +171,7 @@ export default function Past() {
                       <Input
                         id="heading"
                         name="heading"
+                        placeholder="eg. Evening Mixer @ NY Tech Week 2025"
                         value={formData.heading}
                         onChange={handleInputChange}
                         className="bg-neutral-900 border-neutral-700 text-white"
@@ -184,6 +186,7 @@ export default function Past() {
                         id="location"
                         name="location"
                         value={formData.location}
+                        placeholder="eg. New York City"
                         onChange={handleInputChange}
                         className="bg-neutral-900 border-neutral-700 text-white"
                         required
@@ -191,22 +194,31 @@ export default function Past() {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-2">
+                    {/* Date Picker */}
+                    <div className="flex flex-col gap-2">
                       <Label htmlFor="date" className="text-white">
                         Date *
                       </Label>
-                      <Input
+                      <DatePicker
                         id="date"
                         name="date"
-                        type="date"
-                        value={formData.date}
-                        onChange={handleInputChange}
-                        className="bg-neutral-900 border-neutral-700 text-white"
+                        selected={formData.date ? new Date(formData.date) : null}
+                        onChange={(date: Date | null) =>
+                          setFormData((prev) => ({
+                            ...prev,
+                            date: date ? date.toISOString().split("T")[0] : "",
+                          }))
+                        }
+                        dateFormat="yyyy-MM-dd"
+                        className="w-full bg-neutral-900 border border-neutral-700 p-2 rounded-sm text-white"
+                        placeholderText="Select date"
                         required
                       />
                     </div>
-                    <div>
+
+                    {/* Time Input */}
+                    <div className="flex flex-col gap-2">
                       <Label htmlFor="time" className="text-white">
                         Time *
                       </Label>
@@ -214,13 +226,15 @@ export default function Past() {
                         id="time"
                         name="time"
                         type="time"
+                        placeholder="18:00"
                         value={formData.time}
                         onChange={handleInputChange}
-                        className="bg-neutral-900 border-neutral-700 text-white"
+                        className="w-full bg-neutral-900 border border-neutral-700 p-2 rounded-sm text-white"
                         required
                       />
                     </div>
                   </div>
+
 
                   <div>
                     <Label htmlFor="url" className="text-white">
@@ -245,6 +259,7 @@ export default function Past() {
                     <Textarea
                       id="description"
                       name="description"
+                      placeholder="Brief summary of the event"
                       value={formData.description}
                       onChange={handleInputChange}
                       className="bg-neutral-900 border-neutral-700 text-white min-h-[100px]"
