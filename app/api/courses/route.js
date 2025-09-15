@@ -35,6 +35,8 @@ export async function GET() {
         return NextResponse.json({ error: "Failed to fetch courses from Airtable" }, { status: 500 })
     }
 }
+
+
 export async function POST(req) {
     const { title, description, level, duration, students, rating, image, externalLink } = await req.json();
 

@@ -53,6 +53,7 @@ export default function OnlineCourse() {
     //   externalLink: "https://www.linkedin.com/learning/intelligent-automation-for-project-managers",
     // },
   ])
+  const [fetchingCourses, setFetchingCourses] = useState(true);  // Loading state for fetching courses
 
   const [certifications, setCertifications] = useState([
     {
@@ -139,12 +140,15 @@ export default function OnlineCourse() {
   // Fetch courses from the backend (API route)
   useEffect(() => {
     const fetchCourses = async () => {
+      setFetchingCourses(true);
       try {
         const res = await fetch("/api/courses")
         const data = await res.json()
         setCourses(data)
       } catch (error) {
         console.error("Error fetching courses:", error)
+      } finally {
+        setFetchingCourses(false);  // Set loading state to false after the operation ends
       }
     }
 
@@ -466,94 +470,93 @@ export default function OnlineCourse() {
 
           {/* Display Courses */}
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {courses.map((course, index) => (
-              <Card
-                key={index}
-                className="overflow-hidden hover:shadow-lg transition-shadow flex flex-col h-full relative"
-              >
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="absolute top-2 right-2 h-8 w-8 p-0 hover:bg-red-100 hover:text-red-600 z-10 bg-white/80 backdrop-blur-sm"
-                  onClick={() => course.id && handleRemoveCourse(index, course.id)}  // Only call if id is defined
-                  disabled={deleteLoading}  // Disable the button when delete is in progress
+            {fetchingCourses ? (
+              <div className="flex justify-center items-center w-full h-full">
+                <span className="loader"></span>  {/* Loader when fetching data */}
+              </div>
+            ) : (
+              courses.map((course, index) => (
+                <Card
+                  key={index}
+                  className="overflow-hidden hover:shadow-lg transition-shadow flex flex-col h-full relative"
                 >
-                  {deleteLoading ? (
-                    <span className="loader"></span>  // Show loader when deleting
-                  ) : (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="absolute top-2 right-2 h-8 w-8 p-0 hover:bg-red-100 hover:text-red-600 z-10 bg-white/80 backdrop-blur-sm"
+                    onClick={() => course.id && handleRemoveCourse(index, course.id)} // Only call if id is defined
+                  >
                     <X className="h-4 w-4" />
-                  )}
-                </Button>
-
-                {course.image ? (
-                  <img
-                    src={course.image || "/placeholder.svg"}
-                    alt={course.title}
-                    className="w-full h-48 object-cover"
-                  />
-                ) : (
-                  <div className="aspect-video bg-gradient-to-br from-blue-100 to-purple-100 dark:from-blue-900/20 dark:to-purple-900/20 flex items-center justify-center">
-                    <Play className="h-12 w-12 text-[#1a729c]" />
-                  </div>
-                )}
-                <CardHeader>
-                  <div className="flex items-center justify-between mb-2">
-                    <Badge
-                      variant={
-                        course.level === "Beginner"
-                          ? "secondary"
-                          : course.level === "Intermediate"
-                            ? "default"
-                            : course.level === "Advanced"
-                              ? "destructive"
-                              : "outline"
-                      }
-                    >
-                      {course.level}
-                    </Badge>
-                    <div className="flex items-center space-x-1">
-                      <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                      <span className="text-sm font-medium text-[#1a729c]">{course.rating}</span>
-                    </div>
-                  </div>
-                  <CardTitle className="text-lg">{course.title}</CardTitle>
-                  <CardDescription>{course.description}</CardDescription>
-                </CardHeader>
-                <CardContent className="mt-auto">
-                  <div className="flex items-center justify-between text-sm text-muted-foreground mb-4">
-                    <div className="flex items-center space-x-1">
-                      <Clock className="h-4 w-4 text-[#1a729c]" />
-                      <span>{course.duration}</span>
-                    </div>
-                    <div className="flex items-center space-x-1">
-                      <Users className="h-4 w-4 text-[#1a729c]" />
-                      <span>{course.students ? course.students.toLocaleString() : 0} students</span>
-
-                    </div>
-                  </div>
-
-                  {course.progress > 0 && (
-                    <div className="mb-4">
-                      <div className="flex justify-between text-sm mb-1">
-                        <span>Progress</span>
-                        <span>{course.progress}%</span>
-                      </div>
-                      <Progress value={course.progress} className="h-2" />
-                    </div>
-                  )}
-
-                  {course.externalLink ? (
-                    <a href={course.externalLink} target="_blank" rel="noopener noreferrer">
-                      <Button className="w-full bg-[#1a729c] transition-all">View Course</Button>
-                    </a>
+                  </Button>
+                  {course.image ? (
+                    <img
+                      src={course.image || "/placeholder.svg"}
+                      alt={course.title}
+                      className="w-full h-48 object-cover"
+                    />
                   ) : (
-                    <Button className="w-full text-[#1a729c] border-[#1a729c] hover:bg-[#1a729c] hover:text-white transition-all">
-                      {course.progress > 0 ? "Continue Learning" : "View Course"}
-                    </Button>
+                    <div className="aspect-video bg-gradient-to-br from-blue-100 to-purple-100 dark:from-blue-900/20 dark:to-purple-900/20 flex items-center justify-center">
+                      <Play className="h-12 w-12 text-[#1a729c]" />
+                    </div>
                   )}
-                </CardContent>
-              </Card>
-            ))}
+                  <CardHeader>
+                    <div className="flex items-center justify-between mb-2">
+                      <Badge
+                        variant={
+                          course.level === "Beginner"
+                            ? "secondary"
+                            : course.level === "Intermediate"
+                              ? "default"
+                              : course.level === "Advanced"
+                                ? "destructive"
+                                : "outline"
+                        }
+                      >
+                        {course.level}
+                      </Badge>
+                      <div className="flex items-center space-x-1">
+                        <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                        <span className="text-sm font-medium text-[#1a729c]">{course.rating}</span>
+                      </div>
+                    </div>
+                    <CardTitle className="text-lg">{course.title}</CardTitle>
+                    <CardDescription>{course.description}</CardDescription>
+                  </CardHeader>
+                  <CardContent className="mt-auto">
+                    <div className="flex items-center justify-between text-sm text-muted-foreground mb-4">
+                      <div className="flex items-center space-x-1">
+                        <Clock className="h-4 w-4 text-[#1a729c]" />
+                        <span>{course.duration}</span>
+                      </div>
+                      <div className="flex items-center space-x-1">
+                        <Users className="h-4 w-4 text-[#1a729c]" />
+                        <span>{course.students.toLocaleString()} students</span>
+                      </div>
+                    </div>
+
+                    {course.progress > 0 && (
+                      <div className="mb-4">
+                        <div className="flex justify-between text-sm mb-1">
+                          <span>Progress</span>
+                          <span>{course.progress}%</span>
+                        </div>
+                        <Progress value={course.progress} className="h-2" />
+                      </div>
+                    )}
+
+                    {course.externalLink ? (
+                      <a href={course.externalLink} target="_blank" rel="noopener noreferrer">
+                        <Button className="w-full bg-[#1a729c] transition-all">View Course</Button>
+                      </a>
+                    ) : (
+                      <Button className="w-full text-[#1a729c] border-[#1a729c] hover:bg-[#1a729c] hover:text-white transition-all">
+                        {course.progress > 0 ? "Continue Learning" : "View Course"}
+                      </Button>
+                    )}
+                  </CardContent>
+                </Card>
+              ))
+            )}
           </div>
         </div>
 
