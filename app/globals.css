@@ -63,6 +63,7 @@
   * {
     @apply border-border;
   }
+
   body {
     @apply bg-background text-foreground;
   }
@@ -75,8 +76,8 @@
 
     /* soft lavender blooms for depth */
     background-image:
-      radial-gradient(1200px 650px at 100% 0%, rgba(164,153,200,0.22), transparent 65%),
-      radial-gradient(900px 520px at 0% 100%, rgba(204,183,224,0.16), transparent 60%);
+      radial-gradient(1200px 650px at 100% 0%, rgba(164, 153, 200, 0.22), transparent 65%),
+      radial-gradient(900px 520px at 0% 100%, rgba(204, 183, 224, 0.16), transparent 60%);
     background-repeat: no-repeat;
     background-size: cover;
   }
@@ -85,8 +86,8 @@
     /* slight darkening for dark mode while keeping the hue */
     background-color: #0f4768;
     background-image:
-      radial-gradient(1200px 650px at 100% 0%, rgba(164,153,200,0.18), transparent 65%),
-      radial-gradient(900px 520px at 0% 100%, rgba(204,183,224,0.12), transparent 60%);
+      radial-gradient(1200px 650px at 100% 0%, rgba(164, 153, 200, 0.18), transparent 65%),
+      radial-gradient(900px 520px at 0% 100%, rgba(204, 183, 224, 0.12), transparent 60%);
   }
 
 
@@ -111,6 +112,7 @@
     opacity: 0;
     transform: translateY(20px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -153,4 +155,23 @@ html {
   -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
+}
+
+.loader {
+  border: 2px solid transparent;
+  border-top: 2px solid #ffffff;
+  border-radius: 50%;
+  width: 1em;
+  height: 1em;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(360deg);
+  }
 }

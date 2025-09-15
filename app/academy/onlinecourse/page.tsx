@@ -12,32 +12,46 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { useEffect } from "react";
+
+type Course = {
+  id?: string;
+  title: string;
+  description: string;
+  level: string;
+  duration: string;
+  students: number;
+  rating: number;
+  progress: number;
+  image: string;
+  externalLink: string;
+};
 
 export default function OnlineCourse() {
-  const [courses, setCourses] = useState([
-    {
-      title: "Artificial Intelligence for Project Managers",
-      description: "Learn how AI can optimize your project planning, risk assessment, and stakeholder communication.",
-      level: "All Levels",
-      duration: "Self-paced",
-      students: 5400,
-      rating: 4.7,
-      progress: 0,
-      image: "/ai_automation.jpeg",
-      externalLink: "https://www.linkedin.com/learning/artificial-intelligence-for-project-managers-24531458",
-    },
-    {
-      title: "Intelligent Automation for Project Managers",
-      description:
-        "Understand how to harness automation tools to increase efficiency and streamline project workflows.",
-      level: "All Levels",
-      duration: "Self-paced",
-      students: 4100,
-      rating: 4.8,
-      progress: 0,
-      image: "/intellegent.jpeg",
-      externalLink: "https://www.linkedin.com/learning/intelligent-automation-for-project-managers",
-    },
+  const [courses, setCourses] = useState<Course[]>([
+    // {
+    //   title: "Artificial Intelligence for Project Managers",
+    //   description: "Learn how AI can optimize your project planning, risk assessment, and stakeholder communication.",
+    //   level: "All Levels",
+    //   duration: "Self-paced",
+    //   students: 5400,
+    //   rating: 4.7,
+    //   progress: 0,
+    //   image: "/ai_automation.jpeg",
+    //   externalLink: "https://www.linkedin.com/learning/artificial-intelligence-for-project-managers-24531458",
+    // },
+    // {
+    //   title: "Intelligent Automation for Project Managers",
+    //   description:
+    //     "Understand how to harness automation tools to increase efficiency and streamline project workflows.",
+    //   level: "All Levels",
+    //   duration: "Self-paced",
+    //   students: 4100,
+    //   rating: 4.8,
+    //   progress: 0,
+    //   image: "/intellegent.jpeg",
+    //   externalLink: "https://www.linkedin.com/learning/intelligent-automation-for-project-managers",
+    // },
   ])
 
   const [certifications, setCertifications] = useState([
@@ -58,6 +72,7 @@ export default function OnlineCourse() {
       learnMoreUrl: "",
     },
   ])
+  const [loading, setLoading] = useState(false);  // Loading state for add course operation
 
   const [instructors, setInstructors] = useState([
     {
@@ -89,6 +104,7 @@ export default function OnlineCourse() {
   const [isAddCourseOpen, setIsAddCourseOpen] = useState(false)
   const [isAddCertOpen, setIsAddCertOpen] = useState(false)
   const [isAddInstructorOpen, setIsAddInstructorOpen] = useState(false)
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   const [newCourse, setNewCourse] = useState({
     title: "",
@@ -120,23 +136,76 @@ export default function OnlineCourse() {
     profileLink: "",
   })
 
-  const handleAddCourse = () => {
-    if (newCourse.title && newCourse.description) {
-      setCourses([...courses, { ...newCourse }])
-      setNewCourse({
-        title: "",
-        description: "",
-        level: "All Levels",
-        duration: "",
-        students: 0,
-        rating: 5.0,
-        progress: 0,
-        image: "",
-        externalLink: "",
-      })
-      setIsAddCourseOpen(false)
+  // Fetch courses from the backend (API route)
+  useEffect(() => {
+    const fetchCourses = async () => {
+      try {
+        const res = await fetch("/api/courses")
+        const data = await res.json()
+        setCourses(data)
+      } catch (error) {
+        console.error("Error fetching courses:", error)
+      }
     }
-  }
+
+    fetchCourses()
+  }, [])
+
+  const handleAddCourse = async () => {
+    if (newCourse.title && newCourse.description) {
+      setLoading(true);
+      try {
+        const response = await fetch("/api/courses", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(newCourse),
+        });
+
+        if (!response.ok) {
+          throw new Error("Failed to add course");
+        }
+
+        const newCourseData = await response.json();
+
+        // After successfully adding a course, re-fetch the courses
+        await fetchCourses();  // Calling the function to re-fetch the course data
+
+        // Reset the form after adding the course
+        setNewCourse({
+          title: "",
+          description: "",
+          level: "All Levels",
+          duration: "",
+          students: 0,
+          rating: 5.0,
+          progress: 0,
+          image: "",
+          externalLink: "",
+        });
+
+        // Close the dialog
+        setIsAddCourseOpen(false);
+      } catch (error) {
+        console.error("Error adding course:", error);
+      } finally {
+        setLoading(false);  // Set loading to false after the operation ends
+      }
+    }
+  };
+
+  // Function to fetch courses from the API and update state
+  const fetchCourses = async () => {
+    try {
+      const res = await fetch("/api/courses");
+      const data = await res.json();
+      setCourses(data);  // Set the courses state with the new fetched data
+    } catch (error) {
+      console.error("Error fetching courses:", error);
+    }
+  };
+
 
   const handleAddCertification = () => {
     if (newCertification.title && newCertification.description) {
@@ -172,9 +241,30 @@ export default function OnlineCourse() {
     setInstructors(instructors.filter((_, i) => i !== index))
   }
 
-  const handleRemoveCourse = (index: number) => {
-    setCourses(courses.filter((_, i) => i !== index))
+  const handleRemoveCourse = async (index: number, courseId: string) => {
+    setDeleteLoading(true);
+    try {
+      const response = await fetch("/api/courses", {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ id: courseId }),
+      })
+
+      if (!response.ok) {
+        throw new Error("Failed to delete course")
+      }
+
+      setCourses((prevCourses) => prevCourses.filter((_, i) => i !== index))
+    } catch (error) {
+      console.error("Error deleting course:", error)
+    } finally {
+      setDeleteLoading(false);  // Set loading to false after the operation ends
+    }
   }
+
+
 
   const handleRemoveCertification = (index: number) => {
     setCertifications(certifications.filter((_, i) => i !== index))
@@ -203,7 +293,7 @@ export default function OnlineCourse() {
   }
 
   return (
-    <div className="min-h-screen py-12">
+    <div className="min-h-screen py-12 md:py-20 lg:py-30 ">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="text-center mb-16">
@@ -213,8 +303,7 @@ export default function OnlineCourse() {
           </Badge>
           <h1 className="text-4xl font-bold mb-4">Master AI with Real-World Impact</h1>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-            Practical, comprehensive training tailored to business leaders, project managers, and innovators. Learn
-            actionable strategies and frameworks you can implement immediately to drive meaningful results.
+            Practical, comprehensive training tailored to business leaders, project managers, and innovators. Learn actionable strategies and frameworks you can implement immediately to drive meaningful results.
           </p>
         </div>
 
@@ -346,17 +435,36 @@ export default function OnlineCourse() {
                   </div>
 
                   <div className="flex justify-end space-x-2 pt-4">
-                    <Button variant="outline" onClick={() => setIsAddCourseOpen(false)}>
-                      Cancel
+                    <Button
+                      variant="outline"
+                      onClick={() => setIsAddCourseOpen(false)}
+                      disabled={loading}  // Disable the button when loading
+                    >
+                      {loading ? (
+                        <span className="loader"></span> // Show loader when loading is true
+                      ) : (
+                        "Cancel"
+                      )}
                     </Button>
-                    <Button onClick={handleAddCourse} className="bg-[#1a729c] hover:bg-[#1a729c]/90">
-                      Add Course
+                    <Button
+                      onClick={handleAddCourse}
+                      className="bg-[#1a729c] hover:bg-[#1a729c]/90"
+                      disabled={loading}  // Disable the button when loading
+                    >
+                      {loading ? (
+                        <span className="loader"></span>  // Show loader when loading is true
+                      ) : (
+                        "Add Course"
+                      )}
                     </Button>
+
                   </div>
                 </div>
               </DialogContent>
             </Dialog>
           </div>
+
+          {/* Display Courses */}
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
             {courses.map((course, index) => (
               <Card
@@ -367,10 +475,16 @@ export default function OnlineCourse() {
                   variant="ghost"
                   size="sm"
                   className="absolute top-2 right-2 h-8 w-8 p-0 hover:bg-red-100 hover:text-red-600 z-10 bg-white/80 backdrop-blur-sm"
-                  onClick={() => handleRemoveCourse(index)}
+                  onClick={() => course.id && handleRemoveCourse(index, course.id)}  // Only call if id is defined
+                  disabled={deleteLoading}  // Disable the button when delete is in progress
                 >
-                  <X className="h-4 w-4" />
+                  {deleteLoading ? (
+                    <span className="loader"></span>  // Show loader when deleting
+                  ) : (
+                    <X className="h-4 w-4" />
+                  )}
                 </Button>
+
                 {course.image ? (
                   <img
                     src={course.image || "/placeholder.svg"}
@@ -413,7 +527,8 @@ export default function OnlineCourse() {
                     </div>
                     <div className="flex items-center space-x-1">
                       <Users className="h-4 w-4 text-[#1a729c]" />
-                      <span>{course.students.toLocaleString()} students</span>
+                      <span>{course.students ? course.students.toLocaleString() : 0} students</span>
+
                     </div>
                   </div>
 
@@ -731,3 +846,4 @@ export default function OnlineCourse() {
     </div>
   )
 }
+
