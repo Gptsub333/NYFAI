@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input"
 import { MessageCircle, X, Send, Bot } from "lucide-react"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { motion, AnimatePresence } from "framer-motion"
+import Image from "next/image"
 
 export function ChatBot() {
   const [isOpen, setIsOpen] = useState(false)
@@ -142,9 +143,9 @@ export function ChatBot() {
                   <motion.div
                     animate={{ rotate: 360 }}
                     transition={{ duration: 2, repeat: Number.POSITIVE_INFINITY, ease: "linear" }}
-                    className="w-7 h-7 bg-white/20 rounded-full flex items-center justify-center"
+                    className="w-7 h-7 bg-transparent rounded-full flex items-center justify-center"
                   >
-                    <Bot className="h-4.5 w-4.5" />
+                    <Image src="./ai_logo.png" height={25} width={25} />
                   </motion.div>
                   <CardTitle className="text-base font-semibold">AI Assistant</CardTitle>
                 </div>
