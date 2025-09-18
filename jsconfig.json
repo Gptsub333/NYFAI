@@ -22,6 +22,6 @@
       }
     ]
   },
-  "include": ["next-env.d.js", "**/*.js", "**/*.jsx", ".next/types/**/*.js", "app/events/upcoming/page.tsx", "app/resources/promptLibrary/page.tsx"],
+  "include": ["next-env.d.js", "**/*.js", "**/*.jsx", ".next/types/**/*.js", "app/events/upcoming/page.tsx", "app/resources/promptLibrary/page.tsx", "components/Instructors.tsx"],
   "exclude": ["node_modules"]
 }

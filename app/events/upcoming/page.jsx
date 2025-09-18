@@ -452,9 +452,10 @@ export default function UpcomingEvents() {
     image: "",
   })
   const [loading, setLoading] = useState(true)  // Loading state to show when events are being fetched
-
+  const [fetchingEvents, setFetchingEvents] = useState(true); // State for fetching events
   // Fetch Events
   const fetchEvents = async () => {
+    setFetchingEvents(true)
     setLoading(true)
     try {
       const res = await fetch("/api/upcoming")
@@ -464,6 +465,7 @@ export default function UpcomingEvents() {
     } catch (error) {
       console.error("Error fetching events:", error)
     } finally {
+      setFetchingEvents(false)
       setLoading(false)
     }
   }
@@ -704,7 +706,21 @@ export default function UpcomingEvents() {
   };
 
 
-
+  if (fetchingEvents) {
+    return (
+      <div className="mb-16">
+        <div className="flex items-center justify-between mb-8">
+          <h2 className="text-2xl font-bold">Upcoming Events</h2>
+        </div>
+        <div className="flex justify-center items-center py-12">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#1a729c] mx-auto mb-4"></div>
+            <p className="text-muted-foreground">Loading Events...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
 
   return (

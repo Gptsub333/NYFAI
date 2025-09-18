@@ -294,17 +294,27 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { Plus, X } from "lucide-react"
+import { Plus, X, Upload, Edit } from "lucide-react"
 
 export default function EpisodesPage() {
-  const [episodes, setEpisodes] = useState<any[]>([])
+  const [episodes, setEpisodes] = useState<any[]>([{
+    title: "",
+    episode: "",
+    link: "",
+    description: "",
+    image: "",
+  }])
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [formData, setFormData] = useState({
     title: "",
     episode: "",
     link: "",
     description: "",
+    image: "",
   })
+  const [editingEpisode, setEditingEpisode] = useState<any>(null); // holds the episode being edited
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);  // controls the edit dialog
+  const [fetchingEpisodes, setFetchingEpisodes] = useState(true); // State for fetching episodes
 
   // Loading state for fetching data and adding/removing episodes
   const [loading, setLoading] = useState(false)
@@ -312,6 +322,7 @@ export default function EpisodesPage() {
   useEffect(() => {
     const fetchEpisodes = async () => {
       setLoading(true)
+      setFetchingEpisodes(true)
       try {
         const res = await fetch("/api/episodes")
         const data = await res.json()
@@ -320,6 +331,7 @@ export default function EpisodesPage() {
         console.error("Error fetching episodes:", error)
       } finally {
         setLoading(false)
+        setFetchingEpisodes(false)
       }
     }
 
@@ -327,33 +339,68 @@ export default function EpisodesPage() {
   }, [])
 
   const handleAddEpisode = async (e: any) => {
-    e.preventDefault()
-    if (formData.title && formData.episode && formData.description) {
-      setLoading(true)
-      try {
-        const response = await fetch("/api/episodes", {
+    e.preventDefault();
+
+    if (!formData.title || !formData.episode || !formData.description) return;
+
+    setLoading(true);
+
+    try {
+      let imageUrl = formData.image; // use existing image if already URL
+
+      // If the user selected a local file (not already a URL), upload it
+      if (formData.image && formData.image.startsWith("data:image")) {
+        const base64String = formData.image.split(",")[1]; // remove prefix
+        const fileName = "event-images"; // generate unique file name
+        const bucketName = "nyfai-website-image"; // your S3 bucket name
+
+        const uploadRes = await fetch("/api/upload", {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(formData),
-        })
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            imageData: base64String,
+            bucketName,
+            fileName,
+          }),
+        });
 
-        if (!response.ok) {
-          throw new Error("Failed to add episode")
-        }
+        if (!uploadRes.ok) throw new Error("Failed to upload image");
 
-        const newEpisode = await response.json()
-        setEpisodes([...episodes, newEpisode])
-        setFormData({ title: "", episode: "", link: "", description: "" })
-        setIsDialogOpen(false)
-      } catch (error) {
-        console.error("Error adding episode:", error)
-      } finally {
-        setLoading(false)
+        const data = await uploadRes.json();
+        imageUrl = data.imageUrl; // use the uploaded S3 URL
+
       }
+
+      // Prepare payload for episode API
+      const payload = {
+        ...formData,
+        image: imageUrl, // ensure this is the S3 URL
+      };
+
+      // Call episodes API
+      const response = await fetch("/api/episodes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) throw new Error("Failed to add episode");
+
+      const newEpisode = await response.json();
+      setEpisodes([...episodes, newEpisode]);
+
+      // Reset form
+      setFormData({ title: "", episode: "", link: "", description: "", image: "" });
+      setIsDialogOpen(false);
+    } catch (error) {
+      console.error("Error adding episode:", error);
+    } finally {
+      setLoading(false);
+      // window.location.reload(); // Refresh to show the new episode
     }
-  }
+  };
+
+
 
   const removeEpisode = async (index: number, episodeId: string) => {
     setLoading(true)
@@ -378,6 +425,87 @@ export default function EpisodesPage() {
     }
   }
 
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setFormData({ ...formData, image: e.target?.result as string }); // store base64 image
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleEditEpisode = async (e: any) => {
+    e.preventDefault();
+    if (!editingEpisode) return;
+
+    setLoading(true);
+
+    try {
+      let imageUrl = formData.image;
+
+      // If a new local image is selected, upload it first
+      if (formData.image && formData.image.startsWith("data:image")) {
+        const base64String = formData.image.split(",")[1];
+        const fileName = `episode-${Date.now()}.jpg`;
+        const bucketName = "nyfai-website-image";
+
+        const uploadRes = await fetch("/api/upload", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ imageData: base64String, bucketName, fileName }),
+        });
+
+        if (!uploadRes.ok) throw new Error("Failed to upload image");
+
+        const data = await uploadRes.json();
+        imageUrl = data.imageUrl;
+      }
+
+      // Send PUT request to update episode
+      const payload = { ...formData, id: editingEpisode.id, image: imageUrl };
+
+      const response = await fetch("/api/episodes", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) throw new Error("Failed to update episode");
+
+      const updatedEpisode = await response.json();
+
+      // Update state
+      setEpisodes(episodes.map((ep) => (ep.id === updatedEpisode.id ? updatedEpisode : ep)));
+
+      // Close dialog
+      setIsEditDialogOpen(false);
+      setEditingEpisode(null);
+      setFormData({ title: "", episode: "", link: "", description: "", image: "" });
+    } catch (err) {
+      console.error("Error updating episode:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+  if (fetchingEpisodes) {
+    return (
+      <div className="mb-16">
+        <div className="flex items-center justify-between mb-8">
+          <h2 className="text-2xl font-bold">Episodes</h2>
+        </div>
+        <div className="flex justify-center items-center py-12">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#1a729c] mx-auto mb-4"></div>
+            <p className="text-muted-foreground">Loading Episodes...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+
   return (
     <div className="min-h-screen py-20 md:py-33 lg:py-40">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
@@ -393,7 +521,7 @@ export default function EpisodesPage() {
         <div className="flex justify-center mb-8">
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
-              <Button className="bg-[#1a729c] hover:bg-[#145a7a] text-white">
+              <Button onClick={() => { setIsDialogOpen(true) }} className="bg-[#1a729c] hover:bg-[#145a7a] text-white">
                 <Plus className="w-4 h-4 mr-2" />
                 Add New Episode
               </Button>
@@ -447,12 +575,137 @@ export default function EpisodesPage() {
                     placeholder="https://example.com/episode"
                   />
                 </div>
+                <div>
+                  <label className="text-sm font-medium mb-2 block">Course Image</label>
+                  <div className="flex items-center space-x-4">
+                    <Input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageUpload}
+                      className="hidden"
+                      id="image-upload"
+                    />
+                    <label
+                      htmlFor="image-upload"
+                      className="flex items-center space-x-2 px-4 py-2 border border-gray-700 rounded-md cursor-pointer hover:bg-gray-500"
+                    >
+                      <Upload className="w-4 h-4" />
+                      <span>Upload Image</span>
+                    </label>
+                    {/* <Button className="">x</Button> */}
+                    {formData.image && (
+                      <div className="relative">
+                        <img
+                          src={formData.image}
+                          alt="Preview"
+                          className="w-16 h-16 object-cover rounded-md"
+                        />
+
+                      </div>
+                    )}
+                  </div>
+
+                </div>
                 <div className="flex justify-end space-x-2">
-                  <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
+                  <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)} disabled={loading}>
                     Cancel
                   </Button>
                   <Button type="submit" className="bg-[#1a729c] hover:bg-[#145a7a] space-x-4 ">
                     {loading ? <span className="loader"></span> : "Add Episode"}
+                  </Button>
+                </div>
+              </form>
+            </DialogContent>
+          </Dialog>
+        </div>
+
+        <div className="flex justify-center mb-8">
+          <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+            <DialogContent className="sm:max-w-[425px]">
+              <DialogHeader>
+                <DialogTitle>Edit Episode</DialogTitle>
+                <DialogDescription>Edit the details of this episode below.</DialogDescription>
+              </DialogHeader>
+              <form onSubmit={handleEditEpisode} className="space-y-4">
+                <div>
+                  <Label htmlFor="title">Episode Title</Label>
+                  <Input
+                    id="title"
+                    value={formData.title}
+                    onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                    required
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="episode">Episode Number</Label>
+                  <Input
+                    type="number"
+                    id="episode"
+                    value={formData.episode}
+                    onChange={(e) => setFormData({ ...formData, episode: e.target.value })}
+                    required
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="description">Description</Label>
+                  <Textarea
+                    id="description"
+                    value={formData.description}
+                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                    required
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="link">Episode URL (Optional)</Label>
+                  <Input
+                    id="link"
+                    value={formData.link}
+                    onChange={(e) => setFormData({ ...formData, link: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <label className="text-sm font-medium mb-2 block">Episode Image</label>
+                  <div className="flex items-center space-x-4">
+                    <Input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageUpload}
+                      className="hidden"
+                      id="image-upload-edit"
+                    />
+                    <label
+                      htmlFor="image-upload-edit"
+                      className="flex items-center space-x-2 px-4 py-2 border border-gray-700 rounded-md cursor-pointer hover:bg-gray-500"
+                    >
+                      <Upload className="w-4 h-4" />
+                      <span>Upload Image</span>
+                    </label>
+
+                    {formData.image && (
+                      <div className="relative">
+                        <img
+                          src={formData.image}
+                          alt="Preview"
+                          className="w-16 h-16 object-cover rounded-md"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setFormData({ ...formData, image: "" })}
+                          className="absolute -top-2 -right-2 bg-red-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs hover:bg-red-700"
+                        >
+                          ×
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="flex justify-end space-x-2">
+                  <Button type="button" variant="outline" onClick={() => setIsEditDialogOpen(false)} disabled={loading}>
+                    Cancel
+                  </Button>
+                  <Button type="submit" className="bg-[#1a729c] hover:bg-[#145a7a] space-x-4">
+                    {loading ? <span className="loader"></span> : "Save Changes"}
                   </Button>
                 </div>
               </form>
@@ -470,6 +723,33 @@ export default function EpisodesPage() {
                 key={index}
                 className="overflow-hidden hover:shadow-lg transition-shadow flex flex-col h-full border-[#1a729c] relative"
               >
+                <div className="relative h-48 overflow-hidden">
+                  <img
+                    src={episode.image || "/placeholder.svg"}
+                    alt={episode.title}
+                    className="w-full h-full object-cover transition-transform hover:scale-105"
+                  />
+
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="absolute top-2 left-2 h-6 w-6 p-0  bg-gray-50 hover:bg-blue-100"
+                  onClick={() => {
+                    setEditingEpisode(episode);       // set current episode
+                    setFormData({                     // pre-fill the form with episode data
+                      title: episode.title,
+                      episode: episode.episode,
+                      link: episode.link || "",
+                      description: episode.description,
+                      image: episode.image || "",
+                    });
+                    setIsEditDialogOpen(true);        // open edit dialog
+                  }}
+                >
+                  <Edit className="h-4 w-4" />
+                </Button>
+
                 <Button
                   variant="ghost"
                   size="sm"

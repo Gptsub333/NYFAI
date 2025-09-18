@@ -27,12 +27,13 @@ export default function Past() {
     image: "",
   })
   const [loading, setLoading] = useState(true)  // Loading state to show when events are being fetched
-
+  const [fetchingEvents, setFetchingEvents] = useState(true); // State for fetching events
   // Fetch Events
   const fetchEvents = async () => {
     setLoading(true)
+    setFetchingEvents(true)
     try {
-      const res = await fetch("/api/past")
+      const res = await fetch("/api/upcoming")
       const data = await res.json()
       setEvents(data)
       console.log(data)
@@ -40,6 +41,7 @@ export default function Past() {
       console.error("Error fetching events:", error)
     } finally {
       setLoading(false)
+      setFetchingEvents(false)
     }
   }
 
@@ -86,7 +88,7 @@ export default function Past() {
       setLoading(true)
 
       // Call the DELETE API to remove the event from Airtable
-      const response = await fetch("/api/past", {
+      const response = await fetch("/api/upcoming", {
         method: "DELETE",
         headers: {
           "Content-Type": "application/json",
@@ -108,7 +110,7 @@ export default function Past() {
       alert("An error occurred while deleting the event");
     } finally {
       setLoading(false)
-      window.location.reload(); // Refresh the page to show the updated events
+      window.reload(); // Refresh the page to show the updated list of events
     }
   };
 
@@ -214,7 +216,7 @@ export default function Past() {
   // Add this new function to handle event updates
   const updateEventInDatabase = async (eventId, eventData) => {
     try {
-      const response = await fetch("/api/past", {
+      const response = await fetch("/api/upcoming", {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -257,7 +259,7 @@ export default function Past() {
   const addEventToDatabase = async (newEvent) => {
     try {
       // Sending the event data to the backend to add it to Airtable
-      const response = await fetch("/api/past", {
+      const response = await fetch("/api/upcoming", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -278,6 +280,23 @@ export default function Past() {
     }
   };
 
+  if (fetchingEvents) {
+    return (
+      <div className="mb-16">
+        <div className="flex items-center justify-between mb-8">
+          <h2 className="text-2xl font-bold">Upcoming Events</h2>
+        </div>
+        <div className="flex justify-center items-center py-12">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#1a729c] mx-auto mb-4"></div>
+            <p className="text-muted-foreground">Loading Events...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+
 
   return (
     <div className="min-h-screen">
@@ -291,6 +310,8 @@ export default function Past() {
             <h1 className="text-4xl font-bold mb-4 mt-6">Past Events</h1>
             <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
               Catch up on what you missed. Replays, resources, and takeaways from real-world AI in action.
+
+
             </p>
           </div>
 

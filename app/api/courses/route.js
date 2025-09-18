@@ -37,6 +37,7 @@ export async function GET() {
 }
 
 
+
 export async function POST(req) {
     const { title, description, level, duration, students, rating, image, externalLink } = await req.json();
 
@@ -69,6 +70,70 @@ export async function POST(req) {
         return NextResponse.json({ error: "Failed to create course" }, { status: 500 });
     }
 }
+
+
+export async function PUT(req) {
+    try {
+        const {
+            id,
+            title,
+            description,
+            level,
+            duration,
+            students,
+            rating,
+            image,
+            externalLink,
+        } = await req.json();
+
+        // Validate required fields
+        if (!id) {
+            return NextResponse.json({ error: "Course ID is required" }, { status: 400 });
+        }
+
+        if (!title || !description) {
+            return NextResponse.json({ error: "Course Title and Description are required" }, { status: 400 });
+        }
+
+        // Update the course in Airtable
+        const updatedCourse = await base(TABLE_COURSES).update([
+            {
+                id: id,
+                fields: {
+                    "Course Title": title,
+                    Description: description,
+                    Level: level,
+                    Duration: duration,
+                    "Number of Students": students,
+                    "Rating (1-5)": rating,
+                    "Course Image": image,
+                    "External Link": externalLink,
+                },
+            },
+        ]);
+
+        const record = updatedCourse[0];
+
+        return NextResponse.json(
+            {
+                id: record.id,
+                title: record.fields["Course Title"],
+                description: record.fields.Description,
+                level: record.fields.Level,
+                duration: record.fields.Duration,
+                students: record.fields["Number of Students"],
+                rating: record.fields["Rating (1-5)"],
+                image: record.fields["Course Image"],
+                externalLink: record.fields["External Link"],
+            },
+            { status: 200 }
+        );
+    } catch (error) {
+        console.error("Error updating course:", error);
+        return NextResponse.json({ error: "Failed to update course" }, { status: 500 });
+    }
+}
+
 
 export async function DELETE(req) {
     const { id } = await req.json();

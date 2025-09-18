@@ -103,8 +103,8 @@ export async function PUT(req) {
             { status: 200 }
         );
     } catch (error) {
-        console.error("Error updating event:", error);
-        return new Response("Failed to update event", { status: 500 });
+        console.error("Error updating episode:", error);
+        return new Response("Failed to update episode", { status: 500 });
     }
 }
 

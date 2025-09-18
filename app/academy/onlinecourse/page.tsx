@@ -2,17 +2,19 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
-import { BookOpen, Play, Clock, Users, Star, Award, Plus, Upload, X } from "lucide-react"
+import { BookOpen, Play, Clock, Users, Star, Award, Plus, Upload, X, Edit } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
-import { useEffect } from "react";
+import Certifications from "@/components/certifications"
+import Instructors from "@/components/Instructors"
+import Loader from "@/components/Loader"
 
 type Course = {
   id?: string;
@@ -26,7 +28,6 @@ type Course = {
   image: string;
   externalLink: string;
 };
-
 export default function OnlineCourse() {
   const [courses, setCourses] = useState<Course[]>([
     // {
@@ -55,59 +56,13 @@ export default function OnlineCourse() {
   ])
   const [fetchingCourses, setFetchingCourses] = useState(true);  // Loading state for fetching courses
 
-  const [certifications, setCertifications] = useState([
-    {
-      title: "Certified AI Business Leader",
-      description: "Comprehensive certification covering AI tools, strategies, and implementation in marketing.",
-      duration: "12 weeks",
-      projects: 8,
-      badge: "Professional",
-      learnMoreUrl: "",
-    },
-    {
-      title: "Advanced Strategic AI Implementation Expert",
-      description: "Master-level certification for marketing automation platforms and advanced strategies.",
-      duration: "16 weeks",
-      projects: 12,
-      badge: "Expert",
-      learnMoreUrl: "",
-    },
-  ])
   const [loading, setLoading] = useState(false);  // Loading state for add course operation
 
-  const [instructors, setInstructors] = useState([
-    {
-      name: "Oliver Yarbrough, M.S., PMP®",
-      title: "AI & Project Management Expert",
-      experience: "20+ years leading business transformation & AI adoption",
-      avatar: "/oliver_headshot.jpeg",
-      bio: "Founder of Not Your Father's A.I., LinkedIn Learning Author, coach and speaker. He helps business leaders bridge AI, project management, and growth strategy.",
-      profileLink: "https://www.linkedin.com/in/oliveryarbrough/",
-    },
-    {
-      name: "Marcus Chen",
-      title: "Automation Expert",
-      experience: "12+ years",
-      avatar: "",
-      bio: "Built marketing automation systems for Fortune 500 companies and startups alike.",
-      profileLink: "",
-    },
-    {
-      name: "Lisa Rodriguez",
-      title: "Data Analytics Guru",
-      experience: "10+ years",
-      avatar: "",
-      bio: "Specializes in turning complex data into actionable marketing insights and strategies.",
-      profileLink: "",
-    },
-  ])
-
   const [isAddCourseOpen, setIsAddCourseOpen] = useState(false)
-  const [isAddCertOpen, setIsAddCertOpen] = useState(false)
-  const [isAddInstructorOpen, setIsAddInstructorOpen] = useState(false)
   const [deleteLoading, setDeleteLoading] = useState(false);
-
-  const [newCourse, setNewCourse] = useState({
+  const [editingCourse, setEditingCourse] = useState<Course | null>(null); // course being edited
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);  // controls the edit dialog visibility
+  const [formData, setFormData] = useState({
     title: "",
     description: "",
     level: "All Levels",
@@ -119,22 +74,17 @@ export default function OnlineCourse() {
     externalLink: "",
   })
 
-  const [newCertification, setNewCertification] = useState({
+
+  const [newCourse, setNewCourse] = useState({
     title: "",
     description: "",
+    level: "All Levels",
     duration: "",
-    projects: 0,
-    badge: "Professional",
-    learnMoreUrl: "",
-  })
-
-  const [newInstructor, setNewInstructor] = useState({
-    name: "",
-    title: "",
-    experience: "",
-    avatar: "",
-    bio: "",
-    profileLink: "",
+    students: 0,
+    rating: 5.0,
+    progress: 0,
+    image: "",
+    externalLink: "",
   })
 
   // Fetch courses from the backend (API route)
@@ -159,12 +109,43 @@ export default function OnlineCourse() {
     if (newCourse.title && newCourse.description) {
       setLoading(true);
       try {
+        let imageUrl = newCourse.image; // Use existing image if already URL
+
+        // If the user selected a local file (not already a URL), upload it to S3
+        if (newCourse.image && newCourse.image.startsWith("data:image")) {
+          const base64String = newCourse.image.split(",")[1]; // Remove base64 prefix
+          const fileName = `course-${Date.now()}.jpg`; // Generate a unique file name
+          const bucketName = "nyfai-website-image"; // Your S3 bucket name
+
+          const uploadRes = await fetch("/api/upload", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              imageData: base64String,
+              bucketName,
+              fileName,
+            }),
+          });
+
+          if (!uploadRes.ok) throw new Error("Failed to upload image");
+
+          const data = await uploadRes.json();
+          imageUrl = data.imageUrl; // Use the uploaded S3 URL
+        }
+
+        // Prepare payload for course API
+        const payload = {
+          ...newCourse,
+          image: imageUrl, // Ensure this is the S3 URL
+        };
+
+        // Send the course data along with the image URL to the /api/courses API
         const response = await fetch("/api/courses", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify(newCourse),
+          body: JSON.stringify(payload),
         });
 
         if (!response.ok) {
@@ -174,7 +155,7 @@ export default function OnlineCourse() {
         const newCourseData = await response.json();
 
         // After successfully adding a course, re-fetch the courses
-        await fetchCourses();  // Calling the function to re-fetch the course data
+        await fetchCourses(); // Re-fetch courses to update the list
 
         // Reset the form after adding the course
         setNewCourse({
@@ -194,8 +175,62 @@ export default function OnlineCourse() {
       } catch (error) {
         console.error("Error adding course:", error);
       } finally {
-        setLoading(false);  // Set loading to false after the operation ends
+        setLoading(false); // Set loading to false after the operation ends
       }
+    }
+  };
+
+  const handleEditCourse = async (e: any) => {
+    e.preventDefault();
+    if (!editingCourse) return;
+
+    setLoading(true);
+
+    try {
+      let imageUrl = formData.image;
+
+      // If a new local image is selected, upload it first
+      if (formData.image && formData.image.startsWith("data:image")) {
+        const base64String = formData.image.split(",")[1];
+        const fileName = `course-${Date.now()}.jpg`;
+        const bucketName = "nyfai-website-image";
+
+        const uploadRes = await fetch("/api/upload", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ imageData: base64String, bucketName, fileName }),
+        });
+
+        if (!uploadRes.ok) throw new Error("Failed to upload image");
+
+        const data = await uploadRes.json();
+        imageUrl = data.imageUrl;
+      }
+
+      // Send PUT request to update course
+      const payload = { ...formData, id: editingCourse.id, image: imageUrl };
+
+      const response = await fetch("/api/courses", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) throw new Error("Failed to update course");
+
+      const updatedCourse = await response.json();
+
+      // Update state
+      setCourses(courses.map((course) => (course.id === updatedCourse.id ? updatedCourse : course)));
+
+      // Close dialog
+      setIsEditDialogOpen(false);
+      setEditingCourse(null);
+      setFormData({ title: "", description: "", level: "All Levels", duration: "", students: 0, rating: 5.0, progress: 0, image: "", externalLink: "" });
+    } catch (err) {
+      console.error("Error updating course:", err);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -209,41 +244,6 @@ export default function OnlineCourse() {
       console.error("Error fetching courses:", error);
     }
   };
-
-
-  const handleAddCertification = () => {
-    if (newCertification.title && newCertification.description) {
-      setCertifications([...certifications, { ...newCertification }])
-      setNewCertification({
-        title: "",
-        description: "",
-        duration: "",
-        projects: 0,
-        badge: "Professional",
-        learnMoreUrl: "",
-      })
-      setIsAddCertOpen(false)
-    }
-  }
-
-  const handleAddInstructor = () => {
-    if (newInstructor.name && newInstructor.title && newInstructor.bio) {
-      setInstructors([...instructors, { ...newInstructor }])
-      setNewInstructor({
-        name: "",
-        title: "",
-        experience: "",
-        avatar: "",
-        bio: "",
-        profileLink: "",
-      })
-      setIsAddInstructorOpen(false)
-    }
-  }
-
-  const handleRemoveInstructor = (index: number) => {
-    setInstructors(instructors.filter((_, i) => i !== index))
-  }
 
   const handleRemoveCourse = async (index: number, courseId: string) => {
     setDeleteLoading(true);
@@ -268,32 +268,64 @@ export default function OnlineCourse() {
     }
   }
 
+  const handleImageRemove = () => {
+    // Clear the image from the state
+    setFormData({ ...formData, image: "" });
 
-
-  const handleRemoveCertification = (index: number) => {
-    setCertifications(certifications.filter((_, i) => i !== index))
-  }
-
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (file) {
-      const reader = new FileReader()
-      reader.onload = (e) => {
-        setNewCourse({ ...newCourse, image: e.target?.result as string })
-      }
-      reader.readAsDataURL(file)
+    // Manually reset the input value
+    const imageInput = document.getElementById("image-upload-edit") as HTMLInputElement;
+    if (imageInput) {
+      imageInput.value = ""; // Clear the file input field
     }
-  }
+  };
 
-  const handleInstructorImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
+  // Image upload handler for ADD NEW COURSE dialog
+  const handleAddCourseImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
     if (file) {
-      const reader = new FileReader()
+      const reader = new FileReader();
       reader.onload = (e) => {
-        setNewInstructor({ ...newInstructor, avatar: e.target?.result as string })
-      }
-      reader.readAsDataURL(file)
+        setNewCourse({ ...newCourse, image: e.target?.result as string }); // Store the base64 image in newCourse state
+      };
+      reader.readAsDataURL(file);
     }
+  };
+
+  // Image upload handler for EDIT COURSE dialog
+  const handleEditCourseImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setFormData({ ...formData, image: e.target?.result as string }); // Store the base64 image in formData state
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  // Remove image for ADD NEW COURSE
+  const handleAddCourseImageRemove = () => {
+    setNewCourse({ ...newCourse, image: "" });
+    const imageInput = document.getElementById("image-upload-add") as HTMLInputElement;
+    if (imageInput) {
+      imageInput.value = "";
+    }
+  };
+
+  if (fetchingCourses) {
+    return (
+      <div className="mb-16">
+        <div className="flex items-center justify-between mb-8">
+          <h2 className="text-2xl font-bold">Professional courses</h2>
+        </div>
+        <div className="flex justify-center items-center py-12">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#1a729c] mx-auto mb-4"></div>
+            <p className="text-muted-foreground">Loading Courses...</p>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -408,23 +440,32 @@ export default function OnlineCourse() {
                       <Input
                         type="file"
                         accept="image/*"
-                        onChange={handleImageUpload}
-                        className="hidden"
-                        id="image-upload"
+                        onChange={handleAddCourseImageUpload}
+                        className="hidden bg-gray-600 text-white"
+                        id="image-upload-add"
                       />
                       <label
-                        htmlFor="image-upload"
+                        htmlFor="image-upload-add"
                         className="flex items-center space-x-2 px-4 py-2 border border-gray-300 rounded-md cursor-pointer hover:bg-gray-50"
                       >
                         <Upload className="w-4 h-4" />
                         <span>Upload Image</span>
                       </label>
                       {newCourse.image && (
-                        <img
-                          src={newCourse.image || "/placeholder.svg"}
-                          alt="Preview"
-                          className="w-16 h-16 object-cover rounded-md"
-                        />
+                        <div className="relative">
+                          <img
+                            src={newCourse.image || "/placeholder.svg"}
+                            alt="Preview"
+                            className="w-16 h-16 object-cover rounded-md"
+                          />
+                          <button
+                            type="button"
+                            onClick={handleAddCourseImageRemove}
+                            className="absolute -top-2 -right-2 bg-red-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs hover:bg-red-700"
+                          >
+                            ×
+                          </button>
+                        </div>
                       )}
                     </div>
                   </div>
@@ -444,11 +485,7 @@ export default function OnlineCourse() {
                       onClick={() => setIsAddCourseOpen(false)}
                       disabled={loading}  // Disable the button when loading
                     >
-                      {loading ? (
-                        <span className="loader"></span> // Show loader when loading is true
-                      ) : (
-                        "Cancel"
-                      )}
+                      Cancel
                     </Button>
                     <Button
                       onClick={handleAddCourse}
@@ -468,12 +505,162 @@ export default function OnlineCourse() {
             </Dialog>
           </div>
 
+          <div className="flex justify-center mb-8">
+            <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+              <DialogContent className="sm:max-w-[425px]">
+                <DialogHeader>
+                  <DialogTitle>Edit Course</DialogTitle>
+                  {/* <DialogDescription>Edit the course details below.</DialogDescription> */}
+                </DialogHeader>
+                <form onSubmit={handleEditCourse} className="space-y-4">
+                  <div>
+                    <label className="text-sm font-medium mb-2 block">Course Title</label>
+                    <Input
+                      value={formData.title}
+                      onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                      placeholder="Enter course title"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-sm font-medium mb-2 block">Description</label>
+                    <Textarea
+                      value={formData.description}
+                      onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                      placeholder="Enter course description"
+                      rows={3}
+                      required
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-sm font-medium mb-2 block">Level</label>
+                      <Select
+                        value={formData.level}
+                        onValueChange={(value) => setFormData({ ...formData, level: value })}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Beginner">Beginner</SelectItem>
+                          <SelectItem value="Intermediate">Intermediate</SelectItem>
+                          <SelectItem value="Advanced">Advanced</SelectItem>
+                          <SelectItem value="All Levels">All Levels</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div>
+                      <label className="text-sm font-medium mb-2 block">Duration</label>
+                      <Input
+                        value={formData.duration}
+                        onChange={(e) => setFormData({ ...formData, duration: e.target.value })}
+                        placeholder="e.g., 4 weeks"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-sm font-medium mb-2 block">Number of Students</label>
+                      <Input
+                        type="number"
+                        value={formData.students}
+                        onChange={(e) => setFormData({ ...formData, students: Number(e.target.value) })}
+                        placeholder="0"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="text-sm font-medium mb-2 block">Rating (1-5)</label>
+                      <Input
+                        type="number"
+                        value={formData.rating}
+                        onChange={(e) => setFormData({ ...formData, rating: parseFloat(e.target.value) })}
+                        step="0.1"
+                        min="1"
+                        max="5"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="text-sm font-medium mb-2 block">Course Image</label>
+                    <div className="flex items-center space-x-4">
+                      <Input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleEditCourseImageUpload}
+                        className="hidden"
+                        id="image-upload-edit"
+                      />
+                      <label
+                        htmlFor="image-upload-edit"
+                        className="flex items-center space-x-2 px-4 py-2 border border-gray-700 rounded-md cursor-pointer hover:bg-gray-500"
+                      >
+                        <Upload className="w-4 h-4" />
+                        <span>Upload Image</span>
+                      </label>
+
+                      {formData.image && (
+                        <div className="relative">
+                          <img
+                            src={formData.image}
+                            alt="Preview"
+                            className="w-16 h-16 object-cover rounded-md"
+                          />
+                          <button
+                            type="button"
+                            onClick={handleImageRemove}
+                            className="absolute -top-2 -right-2 bg-red-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs hover:bg-red-700"
+                          >
+                            ×
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="text-sm font-medium mb-2 block">External Link (Optional)</label>
+                    <Input
+                      value={formData.externalLink}
+                      onChange={(e) => setFormData({ ...formData, externalLink: e.target.value })}
+                      placeholder="https://example.com"
+                    />
+                  </div>
+
+                  <div className="flex justify-end space-x-2 pt-4">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setIsEditDialogOpen(false)}
+                      disabled={loading}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      type="submit"
+                      className="bg-[#1a729c] hover:bg-[#145a7a] space-x-4"
+                      disabled={loading}
+                    >
+                      {loading ? <span className="loader"></span> : "Save Changes"}
+                    </Button>
+                  </div>
+                </form>
+              </DialogContent>
+            </Dialog>
+          </div>
           {/* Display Courses */}
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
             {fetchingCourses ? (
-              <div className="flex justify-center items-center w-full h-full">
-                <span className="loader"></span>  {/* Loader when fetching data */}
-              </div>
+              // <div className="flex justify-center items-center w-full h-full">
+              //   {/* <span className="loader">Loading</span>  Loader when fetching data */}
+              // </div>
+              <Loader />
             ) : (
               courses.map((course, index) => (
                 <Card
@@ -483,10 +670,34 @@ export default function OnlineCourse() {
                   <Button
                     variant="ghost"
                     size="sm"
+                    className="absolute top-2 left-2 h-6 w-6 p-0 hover:bg-blue-100 hover:text-blue-600"
+                    onClick={() => {
+                      setEditingCourse(course);  // Set the course being edited
+                      setFormData({             // Pre-fill the form with the course data
+                        title: course.title,
+                        description: course.description,
+                        level: course.level,
+                        duration: course.duration,
+                        students: course.students,
+                        rating: course.rating,
+                        progress: course.progress,
+                        image: course.image,
+                        externalLink: course.externalLink,
+                      });
+                      setIsEditDialogOpen(true); // Open the dialog
+                    }}
+                  >
+                    <Edit className="h-4 w-4" />
+                  </Button>
+
+                  <Button
+                    variant="ghost"
+                    size="sm"
                     className="absolute top-2 right-2 h-8 w-8 p-0 hover:bg-red-100 hover:text-red-600 z-10 bg-white/80 backdrop-blur-sm"
                     onClick={() => course.id && handleRemoveCourse(index, course.id)} // Only call if id is defined
                   >
-                    <X className="h-4 w-4" />
+                    {deleteLoading ? (<span className="loader"></span>) : (<X className="h-4 w-4" />)}
+
                   </Button>
                   {course.image ? (
                     <img
@@ -561,292 +772,11 @@ export default function OnlineCourse() {
         </div>
 
         {/* Certifications */}
-        <div className="mb-16">
-          <div className="flex items-center justify-between mb-8">
-            <h2 className="text-2xl font-bold">Professional Certifications</h2>
-            <Dialog open={isAddCertOpen} onOpenChange={setIsAddCertOpen}>
-              <DialogTrigger asChild>
-                <Button className="bg-[#1a729c] hover:bg-[#1a729c]/90">
-                  <Plus className="w-4 h-4 mr-2" />
-                  Add New Certification
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-                <DialogHeader>
-                  <DialogTitle>Add New Professional Certification</DialogTitle>
-                </DialogHeader>
-                <div className="space-y-4 py-4">
-                  <div>
-                    <label className="text-sm font-medium mb-2 block">Certification Title</label>
-                    <Input
-                      placeholder="Enter certification title"
-                      value={newCertification.title}
-                      onChange={(e) => setNewCertification({ ...newCertification, title: e.target.value })}
-                    />
-                  </div>
-
-                  <div>
-                    <label className="text-sm font-medium mb-2 block">Description</label>
-                    <Textarea
-                      placeholder="Enter certification description"
-                      value={newCertification.description}
-                      onChange={(e) => setNewCertification({ ...newCertification, description: e.target.value })}
-                      rows={3}
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="text-sm font-medium mb-2 block">Certification Level</label>
-                      <Select
-                        value={newCertification.badge}
-                        onValueChange={(value) => setNewCertification({ ...newCertification, badge: value })}
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="Beginner">Beginner</SelectItem>
-                          <SelectItem value="Professional">Professional</SelectItem>
-                          <SelectItem value="Expert">Expert</SelectItem>
-                          <SelectItem value="Master">Master</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div>
-                      <label className="text-sm font-medium mb-2 block">Program Duration</label>
-                      <Input
-                        placeholder="e.g., 12 weeks, 6 months"
-                        value={newCertification.duration}
-                        onChange={(e) => setNewCertification({ ...newCertification, duration: e.target.value })}
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="text-sm font-medium mb-2 block">Number of Projects</label>
-                    <Input
-                      type="number"
-                      placeholder="0"
-                      value={newCertification.projects}
-                      onChange={(e) =>
-                        setNewCertification({ ...newCertification, projects: Number.parseInt(e.target.value) || 0 })
-                      }
-                    />
-                  </div>
-
-                  <div>
-                    <label className="text-sm font-medium mb-2 block">Learn More URL (Optional)</label>
-                    <Input
-                      placeholder="https://example.com/certification"
-                      value={newCertification.learnMoreUrl}
-                      onChange={(e) => setNewCertification({ ...newCertification, learnMoreUrl: e.target.value })}
-                    />
-                  </div>
-
-                  <div className="flex justify-end space-x-2 pt-4">
-                    <Button variant="outline" onClick={() => setIsAddCertOpen(false)}>
-                      Cancel
-                    </Button>
-                    <Button onClick={handleAddCertification} className="bg-[#1a729c] hover:bg-[#1a729c]/90">
-                      Add Certification
-                    </Button>
-                  </div>
-                </div>
-              </DialogContent>
-            </Dialog>
-          </div>
-          <div className="grid md:grid-cols-2 gap-8">
-            {certifications.map((cert, index) => (
-              <Card key={index} className="border-2 border-[#1a729c]/20 relative">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="absolute top-2 right-2 h-8 w-8 p-0 hover:bg-red-100 hover:text-red-600 z-10"
-                  onClick={() => handleRemoveCertification(index)}
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-                <CardHeader>
-                  <div className="flex items-center space-x-2 mb-2">
-                    <Award className="h-6 w-6 text-[#1a729c]" />
-                    <Badge variant="outline">{cert.badge}</Badge>
-                  </div>
-                  <CardTitle className="">{cert.title}</CardTitle>
-                  <CardDescription>{cert.description}</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex items-center justify-between text-sm text-muted-foreground mb-4">
-                    <span>{cert.duration} program</span>
-                    <span>{cert.projects} hands-on projects</span>
-                  </div>
-                  {cert.learnMoreUrl ? (
-                    <a href={cert.learnMoreUrl} target="_blank" rel="noopener noreferrer">
-                      <Button variant="outline" className="w-full bg-transparent text-[#1a729c] border-[#1a729c]">
-                        Learn More
-                      </Button>
-                    </a>
-                  ) : (
-                    <Button variant="outline" className="w-full bg-transparent text-[#1a729c] border-[#1a729c]">
-                      Learn More
-                    </Button>
-                  )}
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
+        <Certifications />
 
         {/* Instructors */}
-        <div>
-          <div className="flex items-center justify-between mb-8">
-            <h2 className="text-2xl font-bold">Meet Your Instructors</h2>
-            <Dialog open={isAddInstructorOpen} onOpenChange={setIsAddInstructorOpen}>
-              <DialogTrigger asChild>
-                <Button className="bg-[#1a729c] hover:bg-[#1a729c]/90">
-                  <Plus className="w-4 h-4 mr-2" />
-                  Add New Instructor
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-                <DialogHeader>
-                  <DialogTitle>Add New Instructor</DialogTitle>
-                </DialogHeader>
-                <div className="space-y-4 py-4">
-                  <div>
-                    <label className="text-sm font-medium mb-2 block">Instructor Name</label>
-                    <Input
-                      placeholder="Enter instructor name"
-                      value={newInstructor.name}
-                      onChange={(e) => setNewInstructor({ ...newInstructor, name: e.target.value })}
-                    />
-                  </div>
-
-                  <div>
-                    <label className="text-sm font-medium mb-2 block">Title/Position</label>
-                    <Input
-                      placeholder="e.g., AI & Project Management Expert"
-                      value={newInstructor.title}
-                      onChange={(e) => setNewInstructor({ ...newInstructor, title: e.target.value })}
-                    />
-                  </div>
-
-                  <div>
-                    <label className="text-sm font-medium mb-2 block">Experience</label>
-                    <Input
-                      placeholder="e.g., 10+ years experience"
-                      value={newInstructor.experience}
-                      onChange={(e) => setNewInstructor({ ...newInstructor, experience: e.target.value })}
-                    />
-                  </div>
-
-                  <div>
-                    <label className="text-sm font-medium mb-2 block">Bio</label>
-                    <Textarea
-                      placeholder="Enter instructor bio"
-                      value={newInstructor.bio}
-                      onChange={(e) => setNewInstructor({ ...newInstructor, bio: e.target.value })}
-                      rows={3}
-                    />
-                  </div>
-
-                  <div>
-                    <label className="text-sm font-medium mb-2 block">Profile Image (Optional)</label>
-                    <div className="flex items-center space-x-4">
-                      <Input
-                        type="file"
-                        accept="image/*"
-                        onChange={handleInstructorImageUpload}
-                        className="hidden"
-                        id="instructor-image-upload"
-                      />
-                      <label
-                        htmlFor="instructor-image-upload"
-                        className="flex items-center space-x-2 px-4 py-2 border border-gray-300 rounded-md cursor-pointer hover:bg-gray-50"
-                      >
-                        <Upload className="w-4 h-4" />
-                        <span>Upload Image</span>
-                      </label>
-                      {newInstructor.avatar && (
-                        <img
-                          src={newInstructor.avatar || "/placeholder.svg"}
-                          alt="Preview"
-                          className="w-16 h-16 object-cover rounded-full"
-                        />
-                      )}
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="text-sm font-medium mb-2 block">Profile Link (Optional)</label>
-                    <Input
-                      placeholder="https://linkedin.com/in/username"
-                      value={newInstructor.profileLink}
-                      onChange={(e) => setNewInstructor({ ...newInstructor, profileLink: e.target.value })}
-                    />
-                  </div>
-
-                  <div className="flex justify-end space-x-2 pt-4">
-                    <Button variant="outline" onClick={() => setIsAddInstructorOpen(false)}>
-                      Cancel
-                    </Button>
-                    <Button onClick={handleAddInstructor} className="bg-[#1a729c] hover:bg-[#1a729c]/90">
-                      Add Instructor
-                    </Button>
-                  </div>
-                </div>
-              </DialogContent>
-            </Dialog>
-          </div>
-          <div className="grid md:grid-cols-3 gap-8">
-            {instructors.map((instructor, index) => (
-              <Card key={index} className="relative">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="absolute top-2 right-2 h-8 w-8 p-0 hover:bg-red-100 hover:text-red-600"
-                  onClick={() => handleRemoveInstructor(index)}
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-                <CardContent className="p-6 text-center">
-                  {instructor.avatar ? (
-                    <img
-                      src={instructor.avatar || "/placeholder.svg"}
-                      alt={`${instructor.name} avatar`}
-                      className="w-20 h-20 rounded-full object-cover mx-auto mb-4 border border-[#1a729c]"
-                    />
-                  ) : (
-                    <div className="w-20 h-20 bg-gradient-to-br from-blue-100 to-purple-100 dark:from-blue-900/20 dark:to-purple-900/20 rounded-full mx-auto mb-4 flex items-center justify-center">
-                      <Users className="h-8 w-8 text-[#1a729c]" />
-                    </div>
-                  )}
-                  <h3 className="font-semibold text-lg mb-1">{instructor.name}</h3>
-                  <p className="text-[#1a729c] text-sm mb-1">{instructor.title}</p>
-                  {instructor.experience && (
-                    <p className="text-muted-foreground text-xs mb-3">{instructor.experience} experience</p>
-                  )}
-                  <p className="text-sm">{instructor.bio}</p>
-                  {instructor.profileLink && (
-                    <div className="mt-4">
-                      <a
-                        href={instructor.profileLink}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-[#1a729c] hover:underline text-sm"
-                      >
-                        View Profile
-                      </a>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
+        <Instructors />
       </div>
     </div>
   )
 }
-

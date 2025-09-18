@@ -1,18 +1,11 @@
+import base from "@/lib/airtable"; // Import Airtable configuration
 import { NextResponse } from "next/server";
-import Airtable from "airtable";
-
-// Initialize Airtable with API key and Base ID
-const base = new Airtable({
-    apiKey: process.env.NEXT_PUBLIC_AIRTABLE_API_KEY,
-}).base(process.env.NEXT_PUBLIC_AIRTABLE_BASE_ID);
-
-// Airtable table name for prompts
-const TABLE_PROMPTS = process.env.NEXT_PUBLIC_AIRTABLE_PROMPTS_TABLE;
+const TABLE_EVENTS = "AI prompt library"; // The name of the Airtable table
 
 export async function GET() {
     try {
         // Fetch all records from Airtable
-        const records = await base(TABLE_PROMPTS).select().all();
+        const records = await base(TABLE_EVENTS).select().all();
 
         // Map the records to your frontend data structure
         const prompts = records.map((record) => ({
@@ -30,6 +23,7 @@ export async function GET() {
         return NextResponse.json({ error: "Failed to fetch prompts from Airtable" }, { status: 500 });
     }
 }
+
 export async function POST(req) {
     const { title, description, content, category, difficulty } = await req.json();
 
@@ -40,7 +34,7 @@ export async function POST(req) {
 
     try {
         // Create a new prompt in Airtable
-        const newPrompt = await base(TABLE_PROMPTS).create({
+        const newPrompt = await base(TABLE_EVENTS).create({
             Title: title,
             Description: description,
             "Prompt Content": content,
@@ -66,6 +60,52 @@ export async function POST(req) {
     }
 }
 
+export async function PUT(req) {
+    const { id, title, description, content, category, difficulty } = await req.json();
+
+    // Ensure the ID and all required fields are provided
+    if (!id) {
+        return NextResponse.json({ error: "Prompt ID is required" }, { status: 400 });
+    }
+
+    if (!title || !description || !content || !category || !difficulty) {
+        return NextResponse.json({ error: "All fields are required" }, { status: 400 });
+    }
+
+    try {
+        // Update the prompt in Airtable
+        const updatedPrompt = await base(TABLE_EVENTS).update([
+            {
+                id: id,
+                fields: {
+                    Title: title,
+                    Description: description,
+                    "Prompt Content": content,
+                    Category: category,
+                    "Difficulty Level": difficulty,
+                }
+            }
+        ]);
+
+        // Return the updated prompt
+        const updatedRecord = updatedPrompt[0];
+        return NextResponse.json(
+            {
+                id: updatedRecord.id,
+                title: updatedRecord.fields.Title,
+                description: updatedRecord.fields.Description,
+                content: updatedRecord.fields["Prompt Content"],
+                category: updatedRecord.fields.Category,
+                difficulty: updatedRecord.fields["Difficulty Level"],
+            },
+            { status: 200 }
+        );
+    } catch (error) {
+        console.error("Error updating prompt:", error);
+        return NextResponse.json({ error: "Failed to update prompt" }, { status: 500 });
+    }
+}
+
 export async function DELETE(req) {
     const { id } = await req.json();
 
@@ -76,7 +116,7 @@ export async function DELETE(req) {
 
     try {
         // Delete the prompt from Airtable
-        await base(TABLE_PROMPTS).destroy([id]);
+        await base(TABLE_EVENTS).destroy([id]);
 
         // Return a success message
         return NextResponse.json({ message: "Prompt deleted successfully" }, { status: 200 });
