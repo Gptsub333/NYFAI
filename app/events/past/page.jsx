@@ -10,30 +10,34 @@ import { Calendar, Clock, MapPin, Plus, Trash2, ExternalLink, Upload, X, Edit } 
 import DatePicker from "react-datepicker"
 import "react-datepicker/dist/react-datepicker.css"
 
-
+// Declare the resetForm function
+const resetForm = () => {
+  // Implementation of resetForm goes here
+}
 
 export default function Past() {
   const [events, setEvents] = useState([])
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [imageError, setImageError] = useState(false)
-  const [editingEvent, setEditingEvent] = useState(null);
+  const [editingEvent, setEditingEvent] = useState(null)
   const [formData, setFormData] = useState({
     heading: "",
     location: "",
     date: "",
     time: "",
+    honors: "",
     description: "",
     url: "",
     image: "",
   })
-  const [loading, setLoading] = useState(true)  // Loading state to show when events are being fetched
-  const [fetchingEvents, setFetchingEvents] = useState(true); // State for fetching events
+  const [loading, setLoading] = useState(true) // Loading state to show when events are being fetched
+  const [fetchingEvents, setFetchingEvents] = useState(true) // State for fetching events
   // Fetch Events
   const fetchEvents = async () => {
     setLoading(true)
     setFetchingEvents(true)
     try {
-      const res = await fetch("/api/upcoming")
+      const res = await fetch("/api/past")
       const data = await res.json()
       setEvents(data)
       console.log(data)
@@ -69,8 +73,8 @@ export default function Past() {
     const file = e.target.files?.[0]
     // Check if file is an SVG (we exclude it)
     if (file && file.type === "image/svg+xml") {
-      alert("SVG files are not allowed.");
-      return;  // Stop the process if SVG is selected
+      alert("SVG files are not allowed.")
+      return // Stop the process if SVG is selected
     }
     if (file) {
       const reader = new FileReader()
@@ -88,35 +92,34 @@ export default function Past() {
       setLoading(true)
 
       // Call the DELETE API to remove the event from Airtable
-      const response = await fetch("/api/upcoming", {
+      const response = await fetch("/api/past", {
         method: "DELETE",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({ id: eventId }),
-      });
+      })
 
       if (response.ok) {
         // Event deleted successfully
-        alert("Event deleted successfully");
+        alert("Event deleted successfully")
         // Optionally, update the UI to reflect the deletion
         // For example, by removing it from a list or resetting the form
       } else {
         // Handle errors
-        alert("Failed to delete event");
+        alert("Failed to delete event")
       }
     } catch (error) {
-      console.error("Error deleting event:", error);
-      alert("An error occurred while deleting the event");
+      console.error("Error deleting event:", error)
+      alert("An error occurred while deleting the event")
     } finally {
       setLoading(false)
-      window.reload(); // Refresh the page to show the updated list of events
+      window.location.reload() // Refresh the page to show the updated list of events
     }
-  };
-
+  }
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
+    e.preventDefault()
 
     // Validation - Ensure all required fields are filled
     if (
@@ -124,26 +127,27 @@ export default function Past() {
       !formData.location ||
       !formData.date ||
       !formData.time ||
+      !formData.honors ||
       !formData.description ||
       !formData.url ||
       !formData.image
     ) {
-      alert("All fields including image are required!");
-      return;
+      alert("All fields including image are required!")
+      return
     }
 
     try {
-      setLoading(true);
+      setLoading(true)
 
-      let imageUrl = formData.image;
+      let imageUrl = formData.image
 
       // Check if we need to upload a new image (only if it's base64 data)
-      if (formData.image.startsWith('data:image/')) {
+      if (formData.image.startsWith("data:image/")) {
         // Extract the base64 image data (remove the prefix)
-        const imageData = formData.image.split(',')[1]; // Extract base64 image data
+        const imageData = formData.image.split(",")[1] // Extract base64 image data
 
         if (!imageData) {
-          throw new Error("Invalid image data");
+          throw new Error("Invalid image data")
         }
 
         // Send the image data to the API route for uploading to S3
@@ -154,18 +158,18 @@ export default function Past() {
           },
           body: JSON.stringify({
             imageData: imageData, // Only send the base64 content (no prefix)
-            bucketName: 'nyfai-website-image', // S3 bucket name
+            bucketName: "nyfai-website-image", // S3 bucket name
             fileName: `event-images/${Date.now()}.jpg`, // Generate a unique file name
           }),
-        });
+        })
 
         if (!response.ok) {
-          throw new Error("Image upload failed");
+          throw new Error("Image upload failed")
         }
 
         // Extract the image URL from the response
-        const uploadResponse = await response.json();
-        imageUrl = uploadResponse.imageUrl;
+        const uploadResponse = await response.json()
+        imageUrl = uploadResponse.imageUrl
       }
       // If formData.image is already a URL (editing existing event), use it as is
 
@@ -175,19 +179,20 @@ export default function Past() {
         location: formData.location,
         date: formData.date,
         time: formData.time,
+        honors: formData.honors,
         description: formData.description,
         url: formData.url,
         image: imageUrl, // Use the uploaded image URL or existing URL
-      };
+      }
 
-      console.log("Event Data:", eventData);
+      console.log("Event Data:", eventData)
 
       if (editingEvent) {
         // Update existing event
-        await updateEventInDatabase(editingEvent, eventData);
+        await updateEventInDatabase(editingEvent, eventData)
       } else {
         // Add new event to the database
-        await addEventToDatabase(eventData);
+        await addEventToDatabase(eventData)
       }
 
       // Reset the form and close the dialog
@@ -196,27 +201,27 @@ export default function Past() {
         location: "",
         date: "",
         time: "",
+        honors: "", // Added honors field to form reset
         description: "",
         url: "",
         image: "",
-      });
+      })
 
-      setEditingEvent(null); // Clear editing state
-      setIsDialogOpen(false);
-
+      setEditingEvent(null) // Clear editing state
+      setIsDialogOpen(false)
     } catch (error) {
-      console.error("Error uploading image and adding/updating event:", error);
-      alert("Error saving event. Please try again.");
+      console.error("Error uploading image and adding/updating event:", error)
+      alert("Error saving event. Please try again.")
     } finally {
-      setLoading(false);
-      window.location.reload(); // Refresh the page to show the updated events
+      setLoading(false)
+      window.location.reload() // Refresh the page to show the updated events
     }
-  };
+  }
 
   // Add this new function to handle event updates
   const updateEventInDatabase = async (eventId, eventData) => {
     try {
-      const response = await fetch("/api/upcoming", {
+      const response = await fetch("/api/past", {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -225,33 +230,34 @@ export default function Past() {
           id: eventId,
           ...eventData,
         }),
-      });
+      })
 
       if (!response.ok) {
-        throw new Error("Failed to update event");
+        throw new Error("Failed to update event")
       }
 
-      return await response.json();
+      return await response.json()
     } catch (error) {
-      console.error("Error updating event:", error);
-      throw error;
+      console.error("Error updating event:", error)
+      throw error
     }
-  };
+  }
 
   // You'll also need to add the handleEditEvent function
   const handleEditEvent = (event) => {
-    setEditingEvent(event.id);
+    setEditingEvent(event.id)
     setFormData({
       heading: event.heading,
       location: event.location,
       date: event.date,
       time: event.time,
+      honors: event.honors,
       description: event.description,
       url: event.url,
       image: event.image,
-    });
-    setIsDialogOpen(true);
-  };
+    })
+    setIsDialogOpen(true)
+  }
 
   // Don't forget to add the editingEvent state at the top of your component
   // const [editingEvent, setEditingEvent] = useState(null);
@@ -259,26 +265,26 @@ export default function Past() {
   const addEventToDatabase = async (newEvent) => {
     try {
       // Sending the event data to the backend to add it to Airtable
-      const response = await fetch("/api/upcoming", {
+      const response = await fetch("/api/past", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify(newEvent),
-      });
+      })
 
       if (!response.ok) {
-        throw new Error("Failed to add event");
+        throw new Error("Failed to add event")
       }
 
-      const eventData = await response.json();
+      const eventData = await response.json()
 
       // Update the events state with the new event
-      setEvents((prev) => [...prev, eventData]);
+      setEvents((prev) => [...prev, eventData])
     } catch (error) {
-      console.error("Error adding event:", error);
+      console.error("Error adding event:", error)
     }
-  };
+  }
 
   if (fetchingEvents) {
     return (
@@ -293,10 +299,8 @@ export default function Past() {
           </div>
         </div>
       </div>
-    );
+    )
   }
-
-
 
   return (
     <div className="min-h-screen">
@@ -310,16 +314,17 @@ export default function Past() {
             <h1 className="text-4xl font-bold mb-4 mt-6">Past Events</h1>
             <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
               Catch up on what you missed. Replays, resources, and takeaways from real-world AI in action.
-
-
             </p>
           </div>
 
           <div className="mb-8 flex justify-center">
-            <Dialog open={isDialogOpen} onOpenChange={(open) => {
-              setIsDialogOpen(open);
-              if (!open) resetForm();
-            }}>
+            <Dialog
+              open={isDialogOpen}
+              onOpenChange={(open) => {
+                setIsDialogOpen(open)
+                if (!open) resetForm()
+              }}
+            >
               <DialogTrigger asChild>
                 <Button className="bg-[#1a729c] hover:bg-[#165881] text-white">
                   <Plus className="w-4 h-4 mr-2" />
@@ -328,9 +333,7 @@ export default function Past() {
               </DialogTrigger>
               <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
-                  <DialogTitle>
-                    {editingEvent ? "Edit Event" : "Add New Event"}
-                  </DialogTitle>
+                  <DialogTitle>{editingEvent ? "Edit Event" : "Add New Event"}</DialogTitle>
                 </DialogHeader>
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <div className="grid grid-cols-1 gap-4">
@@ -397,13 +400,24 @@ export default function Past() {
                       />
                     </div>
 
+                    <div>
+                      <Label htmlFor="honors">Honor of the meet *</Label>
+                      <Input
+                        id="honors"
+                        value={formData.honors}
+                        onChange={(e) => handleInputChange("honors", e.target.value)}
+                        placeholder="Enter honor of the meet"
+                        required
+                      />
+                    </div>
+
                     <div className="grid grid-cols-2 gap-4">
                       <div className="flex flex-col gap-2">
                         <Label htmlFor="date">Date</Label>
                         <DatePicker
                           id="date"
                           selected={formData.date ? new Date(formData.date) : null}
-                          onChange={(date) => handleInputChange("date", date ? date.toISOString().split('T')[0] : "")}
+                          onChange={(date) => handleInputChange("date", date ? date.toISOString().split("T")[0] : "")}
                           dateFormat="yyyy-MM-dd"
                           className="bg-transparent border border-neutral-600 text-white px-2 py-1 rounded-sm w-fit"
                           placeholderText="Select a date"
@@ -452,25 +466,23 @@ export default function Past() {
                       type="button"
                       variant="outline"
                       onClick={() => {
-                        setIsDialogOpen(false);
-                        resetForm();
+                        setIsDialogOpen(false)
+                        resetForm()
                       }}
                     >
                       Cancel
                     </Button>
 
-                    <Button
-                      type="submit"
-                      className="bg-[#1a729c] hover:bg-[#165881] text-white"
-                      disabled={loading}
-                    >
+                    <Button type="submit" className="bg-[#1a729c] hover:bg-[#165881] text-white" disabled={loading}>
                       {loading ? (
                         <div className="flex justify-center items-center">
                           <div className="animate-spin rounded-full border-t-2 border-b-2 border-white w-5 h-5 mr-2"></div>
                           <span>Loading...</span>
                         </div>
+                      ) : editingEvent ? (
+                        "Update Event"
                       ) : (
-                        editingEvent ? "Update Event" : "Add Event"
+                        "Add Event"
                       )}
                     </Button>
                   </div>
@@ -539,6 +551,10 @@ export default function Past() {
                         <Clock className="w-4 h-4" />
                         <span className="text-white">Time:</span> {event.time}
                       </p>
+
+                      <p className="flex items-center gap-2">
+                        <span className="text-white">Honor of the meet:</span> {event.honors}
+                      </p>
                     </div>
 
                     <p className="text-neutral-300 text-sm leading-relaxed mb-4">{event.description}</p>
@@ -560,5 +576,5 @@ export default function Past() {
         </div>
       </section>
     </div>
-  );
+  )
 }

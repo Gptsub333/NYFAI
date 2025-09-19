@@ -4,7 +4,15 @@ import { useState, useRef } from "react"
 import { usePathname } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
-import { Menu, User, LogOut, ChevronDown } from "lucide-react"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { Menu, User, LogOut, ChevronDown, Settings, UserCircle } from "lucide-react"
 import { useAuth } from "@/components/auth-provider"
 import Link from "next/link"
 
@@ -71,6 +79,81 @@ export function Header() {
             <Link href="/sponsor" className="text-gray-50 hover:text-white/20 transition-colors font-medium">
               Sponsor
             </Link>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="flex items-center space-x-2 text-white hover:text-white/80 hover:bg-white/10 transition-colors px-3 py-1 rounded-full"
+                >
+                  {user ? (
+                    <>
+                      <div className="w-6 h-6 bg-white/20 rounded-full flex items-center justify-center">
+                        <User className="w-3 h-3" />
+                      </div>
+                      <span className="font-medium">{user.name || user.email}</span>
+                      <ChevronDown className="w-3 h-3" />
+                    </>
+                  ) : (
+                    <>
+                      <div className="w-6 h-6 bg-white/20 rounded-full flex items-center justify-center">
+                        <User className="w-4 h-4" />
+                      </div>
+                      <ChevronDown className="w-3 h-3" />
+                    </>
+                  )}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56 bg-white/95 backdrop-blur-sm border-0 shadow-xl">
+                {user ? (
+                  <>
+                    <DropdownMenuLabel className="text-gray-900">
+                      <div className="flex flex-col space-y-1">
+                        <p className="text-sm font-medium">{user.name || "User"}</p>
+                        <p className="text-xs text-gray-500">{user.email}</p>
+                      </div>
+                    </DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem className="text-gray-700 hover:bg-[#1a729c]/10 focus:bg-[#1a729c]/10">
+                      <UserCircle className="w-4 h-4 mr-2" />
+                      Profile
+                    </DropdownMenuItem>
+                    <DropdownMenuItem className="text-gray-700 hover:bg-[#1a729c]/10 focus:bg-[#1a729c]/10">
+                      <Settings className="w-4 h-4 mr-2" />
+                      Settings
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={logout} className="text-red-600 hover:bg-red-50 focus:bg-red-50">
+                      <LogOut className="w-4 h-4 mr-2" />
+                      Logout
+                    </DropdownMenuItem>
+                  </>
+                ) : (
+                  <>
+                    <DropdownMenuLabel className="text-gray-900">Account</DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem asChild>
+                      <Link
+                        href="/auth/login"
+                        className="text-gray-700 hover:bg-[#1a729c]/10 focus:bg-[#1a729c]/10 cursor-pointer"
+                      >
+                        <User className="w-4 h-4 mr-2" />
+                        Login
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link
+                        href="/auth/signup"
+                        className="text-[#1a729c] hover:bg-[#1a729c]/10 focus:bg-[#1a729c]/10 font-medium cursor-pointer"
+                      >
+                        <UserCircle className="w-4 h-4 mr-2" />
+                        Sign Up
+                      </Link>
+                    </DropdownMenuItem>
+                  </>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
 
@@ -242,20 +325,53 @@ export function Header() {
                   </div>
 
                   {/* Mobile Footer - auth */}
-                  {user && (
-                    <div className="p-4 border-t border-border">
-                      <div className="flex items-center space-x-3 mb-3">
-                        <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
-                          <User className="w-4 h-4" />
+                  <div className="p-4 border-t border-border">
+                    {user ? (
+                      <>
+                        <div className="flex items-center space-x-3 mb-3">
+                          <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
+                            <User className="w-4 h-4" />
+                          </div>
+                          <div className="flex flex-col">
+                            <span className="text-sm font-medium">{user.name || "User"}</span>
+                            <span className="text-xs text-gray-500">{user.email}</span>
+                          </div>
                         </div>
-                        <span className="text-sm font-medium">{user.email}</span>
+                        <div className="space-y-2">
+                          <Button variant="ghost" size="sm" className="w-full justify-start">
+                            <UserCircle className="w-4 h-4 mr-2" />
+                            Profile
+                          </Button>
+                          <Button variant="ghost" size="sm" className="w-full justify-start">
+                            <Settings className="w-4 h-4 mr-2" />
+                            Settings
+                          </Button>
+                          <Button
+                            onClick={logout}
+                            variant="ghost"
+                            size="sm"
+                            className="w-full justify-start text-red-600 hover:bg-red-50"
+                          >
+                            <LogOut className="w-4 h-4 mr-2" />
+                            Logout
+                          </Button>
+                        </div>
+                      </>
+                    ) : (
+                      <div className="space-y-2">
+                        <Link href="/auth/login" onClick={() => setIsOpen(false)}>
+                          <Button variant="ghost" size="sm" className="w-full">
+                            Login
+                          </Button>
+                        </Link>
+                        <Link href="/auth/signup" onClick={() => setIsOpen(false)}>
+                          <Button size="sm" className="w-full bg-[#1a729c] hover:bg-[#165881] text-white">
+                            Sign Up
+                          </Button>
+                        </Link>
                       </div>
-                      <Button onClick={logout} variant="ghost" size="sm" className="w-full justify-start">
-                        <LogOut className="w-4 h-4 mr-2" />
-                        Logout
-                      </Button>
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </div>
               </SheetContent>
             </Sheet>
