@@ -1,8 +1,29 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Search, ChevronLeft, ChevronRight, Plus, Minus, Edit, Trash2, X } from "lucide-react"
+import { Search, ChevronLeft, ChevronRight, Plus, Minus, Edit, Trash2, X, Upload } from "lucide-react"
 import BlogDetail from "../../../components/BlogDetail"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+
+
+const Dialog = ({ isOpen, onClose, title, children }) => {
+  if (!isOpen) return null
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-[#010817] border border-white/20 rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl">
+        <div className="flex items-center justify-between p-6 border-b border-white/20">
+          <h2 className="text-xl font-semibold text-white">{title}</h2>
+          <button onClick={onClose} className="text-gray-400 hover:text-white transition-colors">
+            <X className="w-6 h-6" />
+          </button>
+        </div>
+        <div className="p-6">{children}</div>
+      </div>
+    </div>
+  )
+}
 
 export default function Articles() {
   const [searchTerm, setSearchTerm] = useState("")
@@ -11,6 +32,8 @@ export default function Articles() {
   const [selectedIndustries, setSelectedIndustries] = useState([])
   const [currentPage, setCurrentPage] = useState(1)
   const [filteredBlogs, setFilteredBlogs] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [blogData, setBlogData] = useState([])
 
   const [isTypeExpanded, setIsTypeExpanded] = useState(true)
   const [isCategoryExpanded, setIsCategoryExpanded] = useState(true)
@@ -18,158 +41,33 @@ export default function Articles() {
   const [showMoreTypes, setShowMoreTypes] = useState(false)
   const [showMoreCategories, setShowMoreCategories] = useState(false)
   const [showMoreIndustries, setShowMoreIndustries] = useState(false)
-
+  const [fetchingArticles, setFetchingArticles] = useState(false)
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const [selectedBlog, setSelectedBlog] = useState(null)
-  const [blogData, setBlogData] = useState([])
   const [formData, setFormData] = useState({
     title: "",
     author: "",
-    date: "",
-    description: "",
+    excerpt: "",
+    content: "",
     image: "",
-    type: "",
     category: "",
+    type: "",
     industry: "",
+    tags: "",
+    date: new Date().toISOString().split('T')[0], // Default to today
   })
 
   const [selectedBlogForView, setSelectedBlogForView] = useState(null)
   const [isViewingBlog, setIsViewingBlog] = useState(false)
+  const [apiLoading, setApiLoading] = useState(false)
 
   const blogsPerPage = 8
 
-  const initialBlogData = [
-    {
-      id: 1,
-      title: "How to Harness AI for Video Creation with Joshua Xu [MAICON 2025 Speaker Series]",
-      author: "Cathy McPhillips",
-      date: "September 18, 2025",
-      description:
-        "In our ongoing speaker series, we're spotlighting the remarkable AI leaders featured at MAICON 2025. During this upcoming session, Joshua Xu will explore how AI video generation is transforming content creation as we know it.",
-      image: "/placeholder.svg",
-      type: "Tech",
-      category: "Content",
-      industry: "Media",
-    },
-    {
-      id: 2,
-      title: "How to Reframe Your AI Adoption for Real Results with Pam Boiros [MAICON 2025 Speaker Series]",
-      author: "Cathy McPhillips",
-      date: "September 18, 2025",
-      description:
-        "In our ongoing speaker series, we're spotlighting the remarkable AI leaders featured at MAICON 2025. During this upcoming session, Pam Boiros will show attendees how to frame problems in a way that reveals actionable AI strategies.",
-      image: "/placeholder.svg",
-      type: "Use Cases",
-      category: "Analytics",
-      industry: "Software",
-    },
-    {
-      id: 3,
-      title: "Should You Turn Your Executives Into AI Avatars?",
-      author: "Mike Kaput",
-      date: "September 16, 2025",
-      description:
-        "Databox CEO Peter Caputa recently posted that he is releasing a new video course taught entirely by his AI double. Should your execs do the same?",
-      image: "/placeholder.svg",
-      type: "Case Studies",
-      category: "Content",
-      industry: "Marketing Agencies",
-    },
-    {
-      id: 4,
-      title: "How Replit Made Its AI Agent 10x Better",
-      author: "Mike Kaput",
-      date: "September 15, 2025",
-      description:
-        "Replit's AI agent can now build full-stack applications, debug code, and deploy projects with unprecedented accuracy and speed.",
-      image: "",
-      type: "Tech",
-      category: "Analytics",
-      industry: "Software",
-    },
-    {
-      id: 5,
-      title: "How OpenAI and Microsoft Just Changed Everything",
-      author: "Sarah Johnson",
-      date: "September 14, 2025",
-      description:
-        "The latest partnership between OpenAI and Microsoft introduces groundbreaking capabilities that will reshape enterprise AI adoption.",
-      image: "",
-      type: "Courses",
-      category: "Advertising",
-      industry: "Software",
-    },
-    {
-      id: 6,
-      title: "The Future of AI in Marketing Automation",
-      author: "David Chen",
-      date: "September 13, 2025",
-      description:
-        "Explore how AI is revolutionizing marketing automation, from personalized campaigns to predictive analytics and customer journey optimization.",
-      image: "",
-      type: "Webinars",
-      category: "Advertising",
-      industry: "Marketing Agencies",
-    },
-    {
-      id: 7,
-      title: "Building Ethical AI Systems: A Comprehensive Guide",
-      author: "Dr. Emily Rodriguez",
-      date: "September 12, 2025",
-      description:
-        "Learn the fundamental principles of ethical AI development, including bias mitigation, transparency, and responsible deployment strategies.",
-      image: "",
-      type: "Podcasts",
-      category: "Comms & PR",
-      industry: "Software",
-    },
-    {
-      id: 8,
-      title: "AI-Powered Customer Service: Real-World Case Studies",
-      author: "Alex Thompson",
-      date: "September 11, 2025",
-      description:
-        "Discover how leading companies are using AI to transform their customer service operations and improve satisfaction rates.",
-      image: "",
-      type: "Case Studies",
-      category: "Content",
-      industry: "Retail",
-    },
-    {
-      id: 9,
-      title: "The Rise of Multimodal AI Models",
-      author: "Dr. Lisa Wang",
-      date: "September 10, 2025",
-      description:
-        "Understanding the latest developments in multimodal AI that can process text, images, audio, and video simultaneously.",
-      image: "",
-      type: "Tech",
-      category: "Analytics",
-      industry: "Healthcare",
-    },
-    {
-      id: 10,
-      title: "AI in Healthcare: Transforming Patient Care",
-      author: "Dr. Michael Brown",
-      date: "September 9, 2025",
-      description:
-        "Explore how artificial intelligence is revolutionizing healthcare delivery, from diagnosis to treatment planning and patient monitoring.",
-      image: "",
-      type: "Use Cases",
-      category: "Content",
-      industry: "Healthcare",
-    },
-  ]
-
-  useEffect(() => {
-    setBlogData(initialBlogData)
-  }, [])
-
   const typeOptions = ["Case Studies", "Courses", "Podcasts", "Tech", "Use Cases", "Webinars", "Research", "Tutorials"]
   const categoryOptions = [
-    "Advertising",
+    "Technology",
     "Analytics",
     "Comms & PR",
     "Content",
@@ -190,6 +88,190 @@ export default function Articles() {
     "Education",
   ]
 
+  // API Functions
+  const fetchArticles = async () => {
+    setLoading(true)
+    setFetchingArticles(true)
+    try {
+      const res = await fetch("/api/articles")
+      if (!res.ok) {
+        throw new Error('Failed to fetch articles')
+      }
+      const data = await res.json()
+      setBlogData(Array.isArray(data) ? data : [])
+    } catch (error) {
+      console.error("Error fetching articles:", error)
+      setBlogData([])
+    } finally {
+      setLoading(false)
+      setFetchingArticles(false)
+    }
+  }
+
+  // Fixed handleImageUpload function with proper parameter
+  const handleImageUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        setFormData({ ...formData, image: event.target?.result }); // store base64 image
+      };
+      reader.readAsDataURL(file);
+    }
+  }
+
+  const createArticle = async (articleData) => {
+    try {
+      let imageUrl = formData.image;
+
+      // If a new local image is selected, upload it first
+      if (formData.image && formData.image.startsWith("data:image")) {
+        const base64String = formData.image.split(",")[1];
+        const fileName = `article-${Date.now()}.jpg`;
+        const bucketName = "nyfai-website-image";
+
+        const uploadRes = await fetch("/api/upload", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ imageData: base64String, bucketName, fileName }),
+        });
+
+        if (!uploadRes.ok) throw new Error("Failed to upload image");
+
+        const data = await uploadRes.json();
+        imageUrl = data.imageUrl;
+      }
+
+      // Prepare payload with proper handling of empty select fields
+      const payload = {
+        title: formData.title,
+        author: formData.author,
+        excerpt: formData.excerpt,
+        content: JSON.stringify({ blocks: [] }),
+        image: imageUrl,
+        date: formatDateForAirtable(formData.date),
+        readTime: "5 Min Read",
+      };
+
+      // Only include select fields if they have valid values
+      if (formData.category && formData.category.trim()) {
+        payload.category = formData.category;
+      }
+      if (formData.type && formData.type.trim()) {
+        payload.type = formData.type;
+      }
+      if (formData.industry && formData.industry.trim()) {
+        payload.industry = formData.industry;
+      }
+      if (formData.tags && formData.tags.trim()) {
+        payload.tags = formData.tags;
+      }
+
+      setApiLoading(true)
+      const response = await fetch('/api/articles', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.message || 'Failed to create article')
+      }
+
+      const newArticle = await response.json()
+      return newArticle
+    } catch (error) {
+      console.error('Error creating article:', error)
+      throw error
+    } finally {
+      setApiLoading(false)
+    }
+  }
+
+  // Updated updateArticle function with S3 upload logic
+  const updateArticle = async (articleData) => {
+    try {
+      setApiLoading(true)
+      let imageUrl = formData.image;
+
+      // If a new local image is selected, upload it first
+      if (formData.image && formData.image.startsWith("data:image")) {
+        const base64String = formData.image.split(",")[1];
+        const fileName = `article-${Date.now()}-updated.jpg`;
+        const bucketName = "nyfai-website-image";
+
+        const uploadRes = await fetch("/api/upload", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ imageData: base64String, bucketName, fileName }),
+        });
+
+        if (!uploadRes.ok) throw new Error("Failed to upload image");
+
+        const data = await uploadRes.json();
+        imageUrl = data.imageUrl;
+      }
+
+      const response = await fetch('/api/articles', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          id: articleData.id,
+          ...articleData,
+          image: imageUrl,
+          content: typeof articleData.content === 'string' ? articleData.content : JSON.stringify(articleData.content || { blocks: [] })
+        })
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.message || 'Failed to update article')
+      }
+
+      const updatedArticle = await response.json()
+      return updatedArticle
+    } catch (error) {
+      console.error('Error updating article:', error)
+      throw error
+    } finally {
+      setApiLoading(false)
+    }
+  }
+
+  const deleteArticle = async (id) => {
+    try {
+      setApiLoading(true)
+      const response = await fetch('/api/articles', {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ id })
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.message || 'Failed to delete article')
+      }
+
+      return await response.json()
+    } catch (error) {
+      console.error('Error deleting article:', error)
+      throw error
+    } finally {
+      setApiLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchArticles()
+  }, [])
+
   useEffect(() => {
     let filtered = blogData
 
@@ -197,15 +279,10 @@ export default function Articles() {
     if (searchTerm) {
       filtered = filtered.filter(
         (blog) =>
-          blog.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          blog.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          blog.author.toLowerCase().includes(searchTerm.toLowerCase()),
+          blog.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          blog.excerpt?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          blog.author?.toLowerCase().includes(searchTerm.toLowerCase()),
       )
-    }
-
-    // Filter by types
-    if (selectedTypes.length > 0) {
-      filtered = filtered.filter((blog) => selectedTypes.includes(blog.type))
     }
 
     // Filter by categories
@@ -213,6 +290,12 @@ export default function Articles() {
       filtered = filtered.filter((blog) => selectedCategories.includes(blog.category))
     }
 
+    // Filter by type
+    if (selectedTypes.length > 0) {
+      filtered = filtered.filter((blog) => selectedTypes.includes(blog.type))
+    }
+
+    // Filter by industries
     if (selectedIndustries.length > 0) {
       filtered = filtered.filter((blog) => selectedIndustries.includes(blog.industry))
     }
@@ -221,47 +304,96 @@ export default function Articles() {
     setCurrentPage(1)
   }, [searchTerm, selectedTypes, selectedCategories, selectedIndustries, blogData])
 
-  const handleAddBlog = () => {
-    const newBlog = {
-      id: Math.max(...blogData.map((b) => b.id)) + 1,
-      ...formData,
-      date:
-        formData.date ||
-        new Date().toLocaleDateString("en-US", {
-          year: "numeric",
-          month: "long",
-          day: "numeric",
-        }),
+  // Helper function to format date for Airtable
+  const formatDateForAirtable = (dateString) => {
+    if (!dateString) return new Date().toISOString().split('T')[0]
+
+    // If it's already in YYYY-MM-DD format, return as is
+    if (dateString.match(/^\d{4}-\d{2}-\d{2}$/)) {
+      return dateString
     }
-    setBlogData([...blogData, newBlog])
-    setIsAddDialogOpen(false)
-    resetForm()
+
+    // If it's in MM/DD/YYYY format, convert it
+    if (dateString.match(/^\d{1,2}\/\d{1,2}\/\d{4}$/)) {
+      const [month, day, year] = dateString.split('/')
+      return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`
+    }
+
+    // Try to parse as a regular date and format
+    try {
+      const date = new Date(dateString)
+      if (isNaN(date.getTime())) {
+        return new Date().toISOString().split('T')[0]
+      }
+      return date.toISOString().split('T')[0]
+    } catch (error) {
+      return new Date().toISOString().split('T')[0]
+    }
   }
 
-  const handleEditBlog = () => {
-    setBlogData(blogData.map((blog) => (blog.id === selectedBlog.id ? { ...selectedBlog, ...formData } : blog)))
-    setIsEditDialogOpen(false)
-    resetForm()
-    setSelectedBlog(null)
+  const handleAddBlog = async () => {
+    try {
+      const articleData = {
+        ...formData,
+        date: formatDateForAirtable(formData.date),
+        readTime: "5 Min Read",
+      }
+
+      await createArticle(articleData)
+      await fetchArticles()
+
+      setIsAddDialogOpen(false)
+      resetForm()
+    } catch (error) {
+      alert('Error creating article: ' + error.message)
+    }
   }
 
-  const handleDeleteBlog = () => {
-    setBlogData(blogData.filter((blog) => blog.id !== selectedBlog.id))
-    setIsDeleteDialogOpen(false)
-    setSelectedBlog(null)
+  const handleEditBlog = async () => {
+    try {
+      const articleData = {
+        id: selectedBlog.id,
+        ...formData,
+        tags: formData.tags,
+        date: formatDateForAirtable(formData.date),
+      }
+
+      await updateArticle(articleData)
+      await fetchArticles()
+
+      setIsEditDialogOpen(false)
+      resetForm()
+      setSelectedBlog(null)
+    } catch (error) {
+      alert('Error updating article: ' + error.message)
+    }
+  }
+
+  const handleDeleteBlog = async () => {
+    try {
+      await deleteArticle(selectedBlog.id)
+      await fetchArticles()
+
+      setIsDeleteDialogOpen(false)
+      setSelectedBlog(null)
+    } catch (error) {
+      alert('Error deleting article: ' + error.message)
+    }
   }
 
   const openEditDialog = (blog) => {
     setSelectedBlog(blog)
     setFormData({
-      title: blog.title,
-      author: blog.author,
-      date: blog.date,
-      description: blog.description,
-      image: blog.image,
-      type: blog.type,
-      category: blog.category,
-      industry: blog.industry,
+      title: blog.title || "",
+      author: blog.author || "",
+      excerpt: blog.excerpt || "",
+      content: blog.content || "",
+      image: blog.image || "",
+      category: blog.category || "",
+      type: blog.type || "",
+      industry: blog.industry || "",
+      tags: blog.tags || "",
+      date: blog.date ? (blog.date.includes('T') ? blog.date.split('T')[0] : blog.date) : new Date().toISOString().split('T')[0],
     })
     setIsEditDialogOpen(true)
   }
@@ -275,12 +407,14 @@ export default function Articles() {
     setFormData({
       title: "",
       author: "",
-      date: "",
-      description: "",
+      excerpt: "",
+      content: "",
       image: "",
-      type: "",
       category: "",
+      type: "",
       industry: "",
+      tags: "",
+      date: new Date().toISOString().split('T')[0],
     })
   }
 
@@ -314,20 +448,20 @@ export default function Articles() {
     return (
       <div className="space-y-3">
         {visibleOptions.map((option) => (
-          <label key={option} className="flex items-center space-x-3 cursor-pointer">
+          <label key={option} className="flex items-center space-x-3 cursor-pointer group">
             <input
               type="checkbox"
               checked={selectedOptions.includes(option)}
               onChange={() => handleChange(option)}
-              className="w-4 h-4 text-[#1a729c] border-gray-300 rounded focus:ring-[#1a729c]/50"
+              className="w-4 h-4 text-[#1a729c] bg-white/10 border-white/20 rounded focus:ring-[#1a729c]/50 focus:ring-2"
             />
-            <span className="text-gray-700">{option}</span>
+            <span className="text-gray-300 group-hover:text-white transition-colors">{option}</span>
           </label>
         ))}
         {hasMoreOptions && (
           <button
             onClick={() => setShowMore(!showMore)}
-            className="flex items-center gap-2 text-[#1a729c] hover:text-[#165881] text-sm font-medium"
+            className="flex items-center gap-2 text-[#1a729c] hover:text-white text-sm font-medium transition-colors"
           >
             {showMore ? "Show Less" : "Show More"}
             {showMore ? <Minus className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
@@ -347,45 +481,39 @@ export default function Articles() {
     window.scrollTo({ top: 0, behavior: "smooth" })
   }
 
-  const Dialog = ({ isOpen, onClose, title, children }) => {
-    if (!isOpen) return null
-
-    return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-        <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-          <div className="flex items-center justify-between p-6 border-b">
-            <h2 className="text-xl font-semibold text-gray-900">{title}</h2>
-            <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors">
-              <X className="w-6 h-6" />
-            </button>
-          </div>
-          <div className="p-6">{children}</div>
-        </div>
-      </div>
-    )
-  }
-
   const handleBlogClick = (blog) => {
-    setSelectedBlogForView(blog)
+    setSelectedBlogForView(blog.id)
     setIsViewingBlog(true)
   }
 
   const handleBackToList = () => {
     setIsViewingBlog(false)
     setSelectedBlogForView(null)
+    fetchArticles()
+  }
+
+  const handleBlogDeleted = (deletedId) => {
+    fetchArticles()
   }
 
   if (isViewingBlog && selectedBlogForView) {
-    return <BlogDetail blog={selectedBlogForView} onBack={handleBackToList} />
+    return (
+      <BlogDetail
+        blogId={selectedBlogForView}
+        onBack={handleBackToList}
+        onBlogDeleted={handleBlogDeleted}
+      />
+    )
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="bg-[#1a729c] text-white py-16">
-        <div className="max-w-7xl mx-auto px-4 md:px-8">
+    <div className="min-h-screen bg-[#010817]">
+      <div className="bg-gradient-to-r from-[#1a729c] to-[#165881] text-white py-20 relative overflow-hidden">
+        <div className="absolute inset-0 bg-black/10"></div>
+        <div className="max-w-7xl mx-auto px-4 md:px-8 relative z-10">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-4xl md:text-5xl font-bold mb-6">Articles & Insights</h1>
+              <h1 className="text-5xl md:text-6xl font-bold mb-6 text-balance">Articles & Insights</h1>
               <p className="text-xl text-blue-100 max-w-4xl leading-relaxed">
                 Discover the latest trends, insights, and expert perspectives on artificial intelligence, technology,
                 and digital transformation. Stay informed with our comprehensive collection of articles, case studies,
@@ -394,7 +522,8 @@ export default function Articles() {
             </div>
             <button
               onClick={() => setIsAddDialogOpen(true)}
-              className="bg-white text-[#1a729c] px-6 py-3 rounded-lg font-medium hover:bg-gray-100 transition-colors flex items-center gap-2"
+              disabled={apiLoading}
+              className="bg-[#010817] backdrop-blur-sm border border-white/20 text-white px-8 py-4 rounded-xl font-medium hover:bg-[#010817]/80 transition-all duration-300 flex items-center gap-3 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Plus className="w-5 h-5" />
               Add Article
@@ -404,196 +533,226 @@ export default function Articles() {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 md:px-8 py-12">
-        <div className="flex flex-col lg:flex-row gap-8">
-          {/* Left Sidebar - Search and Filters */}
-          <div className="lg:w-80 space-y-6">
-            {/* Search */}
-            <div className="bg-white p-6 rounded-lg shadow-sm border">
-              <div className="relative">
-                <input
-                  type="text"
-                  placeholder="Search"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-4 pr-10 py-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#1a729c]/50 focus:border-[#1a729c] outline-none"
-                />
-                <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+        {loading ? (
+          <div className="flex items-center justify-center py-20">
+            <div className="text-white text-xl">Loading articles...</div>
+          </div>
+        ) : (
+          <div className="flex flex-col lg:flex-row gap-8">
+            {/* Left Sidebar - Search and Filters */}
+            <div className="lg:w-80 space-y-6">
+              {/* Search */}
+              <div className="bg-white/5 backdrop-blur-sm border border-white/10 p-6 rounded-xl shadow-xl">
+                <div className="relative">
+                  <input
+                    type="text"
+                    placeholder="Search articles..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full pl-4 pr-10 py-3 bg-white/10 border border-white/20 rounded-lg focus:ring-2 focus:ring-[#1a729c]/50 focus:border-[#1a729c] outline-none text-white placeholder-gray-300"
+                  />
+                  <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-300 w-5 h-5" />
+                </div>
+              </div>
+
+              {/* Clear All Button */}
+              {(selectedTypes.length > 0 ||
+                selectedCategories.length > 0 ||
+                selectedIndustries.length > 0 ||
+                searchTerm) && (
+                  <button
+                    onClick={clearAllFilters}
+                    className="bg-gradient-to-r from-[#1a729c] to-[#165881] text-white px-6 py-3 rounded-xl hover:from-[#165881] hover:to-[#1a729c] transition-all duration-300 flex items-center gap-2 font-medium shadow-lg w-full justify-center"
+                  >
+                    CLEAR ALL ✕
+                  </button>
+                )}
+
+              {/* Type Filter */}
+              <div className="bg-white/5 backdrop-blur-sm border border-white/10 p-6 rounded-xl shadow-xl">
+                <button
+                  onClick={() => setIsTypeExpanded(!isTypeExpanded)}
+                  className="w-full flex items-center justify-between mb-4"
+                >
+                  <h3 className="font-semibold text-white">Type</h3>
+                  {isTypeExpanded ? (
+                    <Minus className="w-5 h-5 text-[#1a729c]" />
+                  ) : (
+                    <Plus className="w-5 h-5 text-[#1a729c]" />
+                  )}
+                </button>
+                {isTypeExpanded &&
+                  renderFilterOptions(typeOptions, selectedTypes, handleTypeChange, showMoreTypes, setShowMoreTypes)}
+              </div>
+
+              {/* Category Filter */}
+              <div className="bg-white/5 backdrop-blur-sm border border-white/10 p-6 rounded-xl shadow-xl">
+                <button
+                  onClick={() => setIsCategoryExpanded(!isCategoryExpanded)}
+                  className="w-full flex items-center justify-between mb-4"
+                >
+                  <h3 className="font-semibold text-white">Category</h3>
+                  {isCategoryExpanded ? (
+                    <Minus className="w-5 h-5 text-[#1a729c]" />
+                  ) : (
+                    <Plus className="w-5 h-5 text-[#1a729c]" />
+                  )}
+                </button>
+                {isCategoryExpanded &&
+                  renderFilterOptions(
+                    categoryOptions,
+                    selectedCategories,
+                    handleCategoryChange,
+                    showMoreCategories,
+                    setShowMoreCategories,
+                  )}
+              </div>
+
+              {/* Industry Filter */}
+              <div className="bg-white/5 backdrop-blur-sm border border-white/10 p-6 rounded-xl shadow-xl">
+                <button
+                  onClick={() => setIsIndustryExpanded(!isIndustryExpanded)}
+                  className="w-full flex items-center justify-between mb-4"
+                >
+                  <h3 className="font-semibold text-white">Industry</h3>
+                  {isIndustryExpanded ? (
+                    <Minus className="w-5 h-5 text-[#1a729c]" />
+                  ) : (
+                    <Plus className="w-5 h-5 text-[#1a729c]" />
+                  )}
+                </button>
+                {isIndustryExpanded &&
+                  renderFilterOptions(
+                    industryOptions,
+                    selectedIndustries,
+                    handleIndustryChange,
+                    showMoreIndustries,
+                    setShowMoreIndustries,
+                  )}
               </div>
             </div>
 
-            {/* Clear All Button */}
-            {(selectedTypes.length > 0 ||
-              selectedCategories.length > 0 ||
-              selectedIndustries.length > 0 ||
-              searchTerm) && (
-                <button
-                  onClick={clearAllFilters}
-                  className="bg-[#1a729c] text-white px-6 py-3 rounded-md hover:bg-[#165881] transition-colors flex items-center gap-2 font-medium"
-                >
-                  CLEAR ALL ✕
-                </button>
+            {/* Main Content */}
+            <div className="flex-1">
+              {/* No Results Message */}
+              {currentBlogs.length === 0 && !loading && (
+                <div className="text-center py-20">
+                  <div className="text-gray-400 text-lg mb-4">No articles found</div>
+                  <p className="text-gray-500">Try adjusting your search or filter criteria</p>
+                </div>
               )}
 
-            {/* Type Filter */}
-            <div className="bg-white p-6 rounded-lg shadow-sm border">
-              <button
-                onClick={() => setIsTypeExpanded(!isTypeExpanded)}
-                className="w-full flex items-center justify-between mb-4"
-              >
-                <h3 className="font-semibold text-gray-900">Type</h3>
-                {isTypeExpanded ? (
-                  <Minus className="w-5 h-5 text-[#1a729c]" />
-                ) : (
-                  <Plus className="w-5 h-5 text-[#1a729c]" />
-                )}
-              </button>
-              {isTypeExpanded &&
-                renderFilterOptions(typeOptions, selectedTypes, handleTypeChange, showMoreTypes, setShowMoreTypes)}
-            </div>
-
-            {/* Category Filter */}
-            <div className="bg-white p-6 rounded-lg shadow-sm border">
-              <button
-                onClick={() => setIsCategoryExpanded(!isCategoryExpanded)}
-                className="w-full flex items-center justify-between mb-4"
-              >
-                <h3 className="font-semibold text-gray-900">Category</h3>
-                {isCategoryExpanded ? (
-                  <Minus className="w-5 h-5 text-[#1a729c]" />
-                ) : (
-                  <Plus className="w-5 h-5 text-[#1a729c]" />
-                )}
-              </button>
-              {isCategoryExpanded &&
-                renderFilterOptions(
-                  categoryOptions,
-                  selectedCategories,
-                  handleCategoryChange,
-                  showMoreCategories,
-                  setShowMoreCategories,
-                )}
-            </div>
-
-            <div className="bg-white p-6 rounded-lg shadow-sm border">
-              <button
-                onClick={() => setIsIndustryExpanded(!isIndustryExpanded)}
-                className="w-full flex items-center justify-between mb-4"
-              >
-                <h3 className="font-semibold text-gray-900">Industry</h3>
-                {isIndustryExpanded ? (
-                  <Minus className="w-5 h-5 text-[#1a729c]" />
-                ) : (
-                  <Plus className="w-5 h-5 text-[#1a729c]" />
-                )}
-              </button>
-              {isIndustryExpanded &&
-                renderFilterOptions(
-                  industryOptions,
-                  selectedIndustries,
-                  handleIndustryChange,
-                  showMoreIndustries,
-                  setShowMoreIndustries,
-                )}
-            </div>
-          </div>
-
-          {/* Main Content */}
-          <div className="flex-1">
-            {/* Blog Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-              {currentBlogs.map((blog) => (
-                <div
-                  key={blog.id}
-                  className="bg-white rounded-lg shadow-sm border overflow-hidden hover:shadow-lg transition-all duration-200 group cursor-pointer"
-                  onClick={() => handleBlogClick(blog)}
-                >
-                  <div className="relative">
-                    <img src={blog.image || "/placeholder.svg"} alt={blog.title} className="w-full h-48 object-cover" />
-                    <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-2">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          openEditDialog(blog)
-                        }}
-                        className="bg-white p-2 rounded-full shadow-md hover:bg-gray-100 transition-colors"
-                      >
-                        <Edit className="w-4 h-4 text-[#1a729c]" />
-                      </button>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          openDeleteDialog(blog)
-                        }}
-                        className="bg-white p-2 rounded-full shadow-md hover:bg-gray-100 transition-colors"
-                      >
-                        <Trash2 className="w-4 h-4 text-red-500" />
-                      </button>
-                    </div>
-                  </div>
-                  <div className="p-6">
-                    <div className="text-sm text-gray-500 mb-2">{blog.date}</div>
-                    <h3 className="text-lg font-semibold text-gray-900 mb-3 line-clamp-2 leading-tight hover:text-[#1a729c] transition-colors">
-                      {blog.title}
-                    </h3>
-                    <div className="flex items-center gap-2 mb-3">
-                      <div className="w-8 h-8 bg-[#1a729c] rounded-full flex items-center justify-center">
-                        <span className="text-xs font-medium text-white">
-                          {blog.author
-                            .split(" ")
-                            .map((n) => n[0])
-                            .join("")}
-                        </span>
-                      </div>
-                      <span className="text-sm text-gray-600 font-medium">{blog.author}</span>
-                    </div>
-                    <p className="text-gray-600 text-sm line-clamp-3 leading-relaxed">{blog.description}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {/* Pagination */}
-            {totalPages > 1 && (
-              <div className="flex items-center justify-center gap-2">
-                <button
-                  onClick={() => handlePageChange(currentPage - 1)}
-                  disabled={currentPage === 1}
-                  className="flex items-center gap-1 px-4 py-2 text-gray-600 hover:text-[#1a729c] disabled:opacity-50 disabled:cursor-not-allowed font-medium"
-                >
-                  <ChevronLeft className="w-4 h-4" />
-                  Prev
-                </button>
-
-                {[...Array(totalPages)].map((_, index) => {
-                  const page = index + 1
-                  return (
-                    <button
-                      key={page}
-                      onClick={() => handlePageChange(page)}
-                      className={`w-10 h-10 rounded font-medium transition-colors ${currentPage === page
-                        ? "bg-[#1a729c] text-white shadow-md"
-                        : "text-gray-600 hover:text-[#1a729c] hover:bg-gray-100"
-                        }`}
+              {/* Blog Grid */}
+              {currentBlogs.length > 0 && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                  {currentBlogs.map((blog) => (
+                    <div
+                      key={blog.id}
+                      className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl shadow-xl overflow-hidden hover:shadow-2xl hover:bg-white/10 transition-all duration-300 group cursor-pointer"
+                      onClick={() => handleBlogClick(blog)}
                     >
-                      {page}
-                    </button>
-                  )
-                })}
+                      <div className="relative">
+                        <img
+                          src={blog.image || "/placeholder.svg"}
+                          alt={blog.title || "Article image"}
+                          className="w-full h-48 object-cover"
+                          onError={(e) => {
+                            e.target.src = "/placeholder.svg";
+                          }}
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
+                        <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-2">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              openEditDialog(blog)
+                            }}
+                            disabled={apiLoading}
+                            className="bg-white/20 backdrop-blur-sm p-2 rounded-full shadow-md hover:bg-white/30 transition-colors border border-white/20 disabled:opacity-50"
+                          >
+                            <Edit className="w-4 h-4 text-white" />
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              openDeleteDialog(blog)
+                            }}
+                            disabled={apiLoading}
+                            className="bg-red-500/20 backdrop-blur-sm p-2 rounded-full shadow-md hover:bg-red-500/30 transition-colors border border-red-500/20 disabled:opacity-50"
+                          >
+                            <Trash2 className="w-4 h-4 text-red-400" />
+                          </button>
+                        </div>
+                      </div>
+                      <div className="p-6">
+                        <div className="text-sm text-gray-300 mb-2">
+                          {blog.date ? new Date(blog.date).toLocaleDateString() : 'No date'}
+                        </div>
+                        <h3 className="text-lg font-semibold text-white mb-3 line-clamp-2 leading-tight hover:text-[#1a729c] transition-colors">
+                          {blog.title || 'Untitled'}
+                        </h3>
+                        <div className="flex items-center gap-2 mb-3">
+                          <div className="w-8 h-8 bg-gradient-to-r from-[#1a729c] to-[#165881] rounded-full flex items-center justify-center shadow-lg">
+                            <span className="text-xs font-medium text-white">
+                              {(blog.author || 'Unknown')
+                                .split(" ")
+                                .map((n) => n[0])
+                                .join("")}
+                            </span>
+                          </div>
+                          <span className="text-sm text-gray-300 font-medium">{blog.author || 'Unknown Author'}</span>
+                        </div>
+                        <p className="text-gray-400 text-sm line-clamp-3 leading-relaxed">{blog.excerpt || 'No excerpt available'}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
 
-                <button
-                  onClick={() => handlePageChange(currentPage + 1)}
-                  disabled={currentPage === totalPages}
-                  className="flex items-center gap-1 px-4 py-2 text-gray-600 hover:text-[#1a729c] disabled:opacity-50 disabled:cursor-not-allowed font-medium"
-                >
-                  Next
-                  <ChevronRight className="w-4 h-4" />
-                </button>
-              </div>
-            )}
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <div className="flex items-center justify-center gap-2">
+                  <button
+                    onClick={() => handlePageChange(currentPage - 1)}
+                    disabled={currentPage === 1}
+                    className="flex items-center gap-1 px-6 py-3 text-gray-300 hover:text-white hover:bg-white/10 disabled:opacity-50 disabled:cursor-not-allowed font-medium rounded-lg transition-all duration-200"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                    Prev
+                  </button>
+
+                  {[...Array(totalPages)].map((_, index) => {
+                    const page = index + 1
+                    return (
+                      <button
+                        key={page}
+                        onClick={() => handlePageChange(page)}
+                        className={`w-12 h-12 rounded-lg font-medium transition-all duration-200 ${currentPage === page
+                          ? "bg-gradient-to-r from-[#1a729c] to-[#165881] text-white shadow-lg"
+                          : "text-gray-300 hover:text-white hover:bg-white/10"
+                          }`}
+                      >
+                        {page}
+                      </button>
+                    )
+                  })}
+
+                  <button
+                    onClick={() => handlePageChange(currentPage + 1)}
+                    disabled={currentPage === totalPages}
+                    className="flex items-center gap-1 px-6 py-3 text-gray-300 hover:text-white hover:bg-white/10 disabled:opacity-50 disabled:cursor-not-allowed font-medium rounded-lg transition-all duration-200"
+                  >
+                    Next
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
+      {/* Add Article Dialog */}
       <Dialog
         isOpen={isAddDialogOpen}
         onClose={() => {
@@ -604,88 +763,142 @@ export default function Articles() {
       >
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Title *</label>
+            <label className="block text-sm font-medium text-white mb-2">Title *</label>
             <input
               type="text"
               value={formData.title}
-              onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#1a729c]/50 focus:border-[#1a729c] outline-none"
+              onChange={(e) => setFormData((prevData) => ({ ...prevData, title: e.target.value }))}
+              className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-md focus:ring-2 focus:ring-[#1a729c]/50 focus:border-[#1a729c] outline-none text-white placeholder-gray-300"
+              placeholder="Enter article title..."
               required
+              autoComplete="off"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Author *</label>
+            <label className="block text-sm font-medium text-white mb-2">Author *</label>
             <input
               type="text"
               value={formData.author}
-              onChange={(e) => setFormData({ ...formData, author: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#1a729c]/50 focus:border-[#1a729c] outline-none"
+              onChange={(e) => setFormData((prevData) => ({ ...prevData, author: e.target.value }))}
+              className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-md focus:ring-2 focus:ring-[#1a729c]/50 focus:border-[#1a729c] outline-none text-white placeholder-gray-300"
+              placeholder="Enter author name..."
+              required
+              autoComplete="off"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-white mb-2">Excerpt *</label>
+            <textarea
+              value={formData.excerpt}
+              onChange={(e) => setFormData((prevData) => ({ ...prevData, excerpt: e.target.value }))}
+              rows={3}
+              className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-md focus:ring-2 focus:ring-[#1a729c]/50 focus:border-[#1a729c] outline-none text-white placeholder-gray-300"
+              placeholder="Brief description of the article..."
               required
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Date</label>
-            <input
-              type="text"
-              value={formData.date}
-              onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-              placeholder="e.g., September 18, 2025"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#1a729c]/50 focus:border-[#1a729c] outline-none"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Image URL</label>
-            <input
-              type="text"
-              value={formData.image}
-              onChange={(e) => setFormData({ ...formData, image: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#1a729c]/50 focus:border-[#1a729c] outline-none"
-            />
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Type *</label>
-              <select
-                value={formData.type}
-                onChange={(e) => setFormData({ ...formData, type: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#1a729c]/50 focus:border-[#1a729c] outline-none"
-                required
+            <label className="text-sm font-medium mb-2 block text-white">Article Image</label>
+            <div className="flex items-center space-x-4">
+              <Input
+                type="file"
+                accept="image/*"
+                onChange={handleImageUpload}
+                className="hidden"
+                id="image-upload-add"
+              />
+              <label
+                htmlFor="image-upload-add"
+                className="flex items-center space-x-2 px-4 py-2 border border-white/20 rounded-md cursor-pointer hover:bg-white/10 text-white transition-colors"
               >
-                <option value="">Select Type</option>
-                {typeOptions.map((type) => (
-                  <option key={type} value={type}>
-                    {type}
-                  </option>
-                ))}
-              </select>
+                <Upload className="w-4 h-4" />
+                <span>Upload Image</span>
+              </label>
+
+              {formData.image && (
+                <div className="relative">
+                  <img
+                    src={formData.image}
+                    alt="Preview"
+                    className="w-16 h-16 object-cover rounded-md"
+                    onError={(e) => {
+                      e.target.src = "/placeholder.svg";
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setFormData({ ...formData, image: "" })}
+                    className="absolute -top-2 -right-2 bg-red-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs hover:bg-red-700"
+                  >
+                    ×
+                  </button>
+                </div>
+              )}
             </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Category *</label>
+              <label className="block text-sm font-medium text-white mb-2">Category *</label>
               <select
                 value={formData.category}
-                onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#1a729c]/50 focus:border-[#1a729c] outline-none"
+                onChange={(e) => setFormData((prevData) => ({ ...prevData, category: e.target.value }))}
+                className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-md focus:ring-2 focus:ring-[#1a729c]/50 focus:border-[#1a729c] outline-none text-white"
                 required
               >
-                <option value="">Select Category</option>
+                <option value="" className="bg-[#010817] text-white">
+                  Select Category
+                </option>
                 {categoryOptions.map((category) => (
-                  <option key={category} value={category}>
+                  <option key={category} value={category} className="bg-[#010817] text-white">
                     {category}
                   </option>
                 ))}
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Industry *</label>
+              <label className="block text-sm font-medium text-white mb-2">Tags</label>
+              <input
+                type="text"
+                value={formData.tags}
+                onChange={(e) => setFormData((prevData) => ({ ...prevData, tags: e.target.value }))}
+                className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-md focus:ring-2 focus:ring-[#1a729c]/50 focus:border-[#1a729c] outline-none text-white placeholder-gray-300"
+                placeholder="tag1, tag2, tag3..."
+                autoComplete="off"
+              />
+            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-white mb-2">Type *</label>
               <select
-                value={formData.industry}
-                onChange={(e) => setFormData({ ...formData, industry: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#1a729c]/50 focus:border-[#1a729c] outline-none"
+                value={formData.type}
+                onChange={(e) => setFormData((prevData) => ({ ...prevData, type: e.target.value }))}
+                className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-md focus:ring-2 focus:ring-[#1a729c]/50 focus:border-[#1a729c] outline-none text-white"
                 required
               >
-                <option value="">Select Industry</option>
+                <option value="" className="bg-[#010817] text-white">
+                  Select Type
+                </option>
+                {typeOptions.map((type) => (
+                  <option key={type} value={type} className="bg-[#010817] text-white">
+                    {type}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-white mb-2">Industry *</label>
+              <select
+                value={formData.industry}
+                onChange={(e) => setFormData((prevData) => ({ ...prevData, industry: e.target.value }))}
+                className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-md focus:ring-2 focus:ring-[#1a729c]/50 focus:border-[#1a729c] outline-none text-white"
+                required
+              >
+                <option value="" className="bg-[#010817] text-white">
+                  Select Industry
+                </option>
                 {industryOptions.map((industry) => (
-                  <option key={industry} value={industry}>
+                  <option key={industry} value={industry} className="bg-[#010817] text-white">
                     {industry}
                   </option>
                 ))}
@@ -693,36 +906,41 @@ export default function Articles() {
             </div>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Description *</label>
+            <label className="block text-sm font-medium text-white mb-2">Publication Date</label>
+            <input
+              type="date"
+              value={formData.date}
+              onChange={(e) => setFormData((prevData) => ({ ...prevData, date: e.target.value }))}
+              className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-md focus:ring-2 focus:ring-[#1a729c]/50 focus:border-[#1a729c] outline-none text-white"
+              placeholder="MM/DD/YYYY or YYYY-MM-DD"
+            />
+            <div className="text-xs text-gray-400 mt-1">Format: YYYY-MM-DD or MM/DD/YYYY</div>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-white mb-2">Content</label>
             <textarea
-              value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              rows={4}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#1a729c]/50 focus:border-[#1a729c] outline-none"
-              required
+              value={typeof formData.content === "string" ? formData.content : ""}
+              onChange={(e) => setFormData((prevData) => ({ ...prevData, content: e.target.value }))}
+              rows={8}
+              className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-md focus:ring-2 focus:ring-[#1a729c]/50 focus:border-[#1a729c] outline-none text-white placeholder-gray-300"
+              placeholder="Write your article content here..."
             />
           </div>
           <div className="flex gap-3 pt-4">
             <button
               onClick={handleAddBlog}
-              disabled={
-                !formData.title ||
-                !formData.author ||
-                !formData.type ||
-                !formData.category ||
-                !formData.industry ||
-                !formData.description
-              }
+              disabled={!formData.title || !formData.author || !formData.category || !formData.excerpt || !formData.type || !formData.industry || apiLoading}
               className="flex-1 bg-[#1a729c] text-white py-2 px-4 rounded-md hover:bg-[#165881] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
-              Add Article
+              {apiLoading ? 'Creating...' : 'Add Article'}
             </button>
             <button
               onClick={() => {
                 setIsAddDialogOpen(false)
                 resetForm()
               }}
-              className="px-6 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors"
+              disabled={apiLoading}
+              className="px-6 py-2 border border-white/20 text-gray-300 rounded-md hover:bg-white/10 hover:text-white transition-colors disabled:opacity-50"
             >
               Cancel
             </button>
@@ -730,6 +948,7 @@ export default function Articles() {
         </div>
       </Dialog>
 
+      {/* Edit Article Dialog */}
       <Dialog
         isOpen={isEditDialogOpen}
         onClose={() => {
@@ -741,118 +960,174 @@ export default function Articles() {
       >
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Title *</label>
+            <label className="block text-sm font-medium text-white mb-2">Title *</label>
             <input
               type="text"
               value={formData.title}
-              onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#1a729c]/50 focus:border-[#1a729c] outline-none"
+              onChange={(e) => setFormData((prevData) => ({ ...prevData, title: e.target.value }))}
+              className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-md focus:ring-2 focus:ring-[#1a729c]/50 focus:border-[#1a729c] outline-none text-white placeholder-gray-300"
               required
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Author *</label>
+            <label className="block text-sm font-medium text-white mb-2">Author *</label>
             <input
               type="text"
               value={formData.author}
-              onChange={(e) => setFormData({ ...formData, author: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#1a729c]/50 focus:border-[#1a729c] outline-none"
+              onChange={(e) => setFormData((prevData) => ({ ...prevData, author: e.target.value }))}
+              className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-md focus:ring-2 focus:ring-[#1a729c]/50 focus:border-[#1a729c] outline-none text-white placeholder-gray-300"
               required
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Date</label>
-            <input
-              type="text"
-              value={formData.date}
-              onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-              placeholder="e.g., September 18, 2025"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#1a729c]/50 focus:border-[#1a729c] outline-none"
+            <label className="block text-sm font-medium text-white mb-2">Excerpt *</label>
+            <textarea
+              value={formData.excerpt}
+              onChange={(e) => setFormData((prevData) => ({ ...prevData, excerpt: e.target.value }))}
+              rows={3}
+              className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-md focus:ring-2 focus:ring-[#1a729c]/50 focus:border-[#1a729c] outline-none text-white placeholder-gray-300"
+              placeholder="Brief description of the article..."
+              required
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Image URL</label>
-            <input
-              type="text"
-              value={formData.image}
-              onChange={(e) => setFormData({ ...formData, image: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#1a729c]/50 focus:border-[#1a729c] outline-none"
-            />
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Type *</label>
-              <select
-                value={formData.type}
-                onChange={(e) => setFormData({ ...formData, type: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#1a729c]/50 focus:border-[#1a729c] outline-none"
-                required
+            <label className="text-sm font-medium mb-2 block text-white">Article Image</label>
+            <div className="flex items-center space-x-4">
+              <Input
+                type="file"
+                accept="image/*"
+                onChange={handleImageUpload}
+                className="hidden"
+                id="image-upload-edit"
+              />
+              <label
+                htmlFor="image-upload-edit"
+                className="flex items-center space-x-2 px-4 py-2 border border-white/20 rounded-md cursor-pointer hover:bg-white/10 text-white transition-colors"
               >
-                <option value="">Select Type</option>
-                {typeOptions.map((type) => (
-                  <option key={type} value={type}>
-                    {type}
-                  </option>
-                ))}
-              </select>
+                <Upload className="w-4 h-4" />
+                <span>Upload Image</span>
+              </label>
+
+              {formData.image && (
+                <div className="relative">
+                  <img
+                    src={formData.image}
+                    alt="Preview"
+                    className="w-16 h-16 object-cover rounded-md"
+                    onError={(e) => {
+                      e.target.src = "/placeholder.svg";
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setFormData({ ...formData, image: "" })}
+                    className="absolute -top-2 -right-2 bg-red-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs hover:bg-red-700"
+                  >
+                    ×
+                  </button>
+                </div>
+              )}
             </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Category *</label>
+              <label className="block text-sm font-medium text-white mb-2">Category *</label>
               <select
                 value={formData.category}
-                onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#1a729c]/50 focus:border-[#1a729c] outline-none"
+                onChange={(e) => setFormData((prevData) => ({ ...prevData, category: e.target.value }))}
+                className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-md focus:ring-2 focus:ring-[#1a729c]/50 focus:border-[#1a729c] outline-none text-white"
                 required
               >
-                <option value="">Select Category</option>
+                <option value="" className="bg-[#010817] text-white">
+                  Select Category
+                </option>
                 {categoryOptions.map((category) => (
-                  <option key={category} value={category}>
+                  <option key={category} value={category} className="bg-[#010817] text-white">
                     {category}
                   </option>
                 ))}
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Industry *</label>
+              <label className="block text-sm font-medium text-white mb-2">Tags</label>
+              <input
+                type="text"
+                value={formData.tags}
+                onChange={(e) => setFormData((prevData) => ({ ...prevData, tags: e.target.value }))}
+                className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-md focus:ring-2 focus:ring-[#1a729c]/50 focus:border-[#1a729c] outline-none text-white placeholder-gray-300"
+                placeholder="tag1, tag2, tag3..."
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-white mb-2">Type *</label>
               <select
-                value={formData.industry}
-                onChange={(e) => setFormData({ ...formData, industry: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#1a729c]/50 focus:border-[#1a729c] outline-none"
+                value={formData.type}
+                onChange={(e) => setFormData((prevData) => ({ ...prevData, type: e.target.value }))}
+                className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-md focus:ring-2 focus:ring-[#1a729c]/50 focus:border-[#1a729c] outline-none text-white"
                 required
               >
-                <option value="">Select Industry</option>
+                <option value="" className="bg-[#010817] text-white">
+                  Select Type
+                </option>
+                {typeOptions.map((type) => (
+                  <option key={type} value={type} className="bg-[#010817] text-white">
+                    {type}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-white mb-2">Industry *</label>
+              <select
+                value={formData.industry}
+                onChange={(e) => setFormData((prevData) => ({ ...prevData, industry: e.target.value }))}
+                className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-md focus:ring-2 focus:ring-[#1a729c]/50 focus:border-[#1a729c] outline-none text-white"
+                required
+              >
+                <option value="" className="bg-[#010817] text-white">
+                  Select Industry
+                </option>
                 {industryOptions.map((industry) => (
-                  <option key={industry} value={industry}>
+                  <option key={industry} value={industry} className="bg-[#010817] text-white">
                     {industry}
                   </option>
                 ))}
               </select>
             </div>
           </div>
+
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Description *</label>
+            <label className="block text-sm font-medium text-white mb-2">Publication Date</label>
+            <input
+              type="date"
+              value={formData.date}
+              onChange={(e) => setFormData((prevData) => ({ ...prevData, date: e.target.value }))}
+              className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-md focus:ring-2 focus:ring-[#1a729c]/50 focus:border-[#1a729c] outline-none text-white"
+              placeholder="MM/DD/YYYY or YYYY-MM-DD"
+            />
+            <div className="text-xs text-gray-400 mt-1">Format: YYYY-MM-DD or MM/DD/YYYY</div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-white mb-2">Content</label>
             <textarea
-              value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              rows={4}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#1a729c]/50 focus:border-[#1a729c] outline-none"
-              required
+              value={typeof formData.content === "string" ? formData.content : ""}
+              onChange={(e) => setFormData((prevData) => ({ ...prevData, content: e.target.value }))}
+              rows={8}
+              className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-md focus:ring-2 focus:ring-[#1a729c]/50 focus:border-[#1a729c] outline-none text-white placeholder-gray-300"
+              placeholder="Write your article content here..."
             />
           </div>
           <div className="flex gap-3 pt-4">
             <button
               onClick={handleEditBlog}
-              disabled={
-                !formData.title ||
-                !formData.author ||
-                !formData.type ||
-                !formData.category ||
-                !formData.industry ||
-                !formData.description
-              }
+              disabled={!formData.title || !formData.author || !formData.category || !formData.excerpt || !formData.type || !formData.industry || apiLoading}
               className="flex-1 bg-[#1a729c] text-white py-2 px-4 rounded-md hover:bg-[#165881] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
-              Update Article
+              {apiLoading ? 'Updating...' : 'Update Article'}
             </button>
             <button
               onClick={() => {
@@ -860,7 +1135,8 @@ export default function Articles() {
                 resetForm()
                 setSelectedBlog(null)
               }}
-              className="px-6 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors"
+              disabled={apiLoading}
+              className="px-6 py-2 border border-white/20 text-gray-300 rounded-md hover:bg-white/10 hover:text-white transition-colors disabled:opacity-50"
             >
               Cancel
             </button>
@@ -868,6 +1144,7 @@ export default function Articles() {
         </div>
       </Dialog>
 
+      {/* Delete Article Dialog */}
       <Dialog
         isOpen={isDeleteDialogOpen}
         onClose={() => {
@@ -877,26 +1154,28 @@ export default function Articles() {
         title="Delete Article"
       >
         <div className="space-y-4">
-          <p className="text-gray-600">Are you sure you want to delete this article? This action cannot be undone.</p>
+          <p className="text-gray-300">Are you sure you want to delete this article? This action cannot be undone.</p>
           {selectedBlog && (
-            <div className="bg-gray-50 p-4 rounded-lg">
-              <h4 className="font-medium text-gray-900 mb-2">{selectedBlog.title}</h4>
-              <p className="text-sm text-gray-600">by {selectedBlog.author}</p>
+            <div className="bg-white/5 border border-white/10 p-4 rounded-lg">
+              <h4 className="font-medium text-white mb-2">{selectedBlog.title}</h4>
+              <p className="text-sm text-gray-300">by {selectedBlog.author}</p>
             </div>
           )}
           <div className="flex gap-3 pt-4">
             <button
               onClick={handleDeleteBlog}
-              className="flex-1 bg-red-600 text-white py-2 px-4 rounded-md hover:bg-red-700 transition-colors"
+              disabled={apiLoading}
+              className="flex-1 bg-red-600 text-white py-2 px-4 rounded-md hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
-              Delete Article
+              {apiLoading ? 'Deleting...' : 'Delete Article'}
             </button>
             <button
               onClick={() => {
                 setIsDeleteDialogOpen(false)
                 setSelectedBlog(null)
               }}
-              className="px-6 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors"
+              disabled={apiLoading}
+              className="px-6 py-2 border border-white/20 text-gray-300 rounded-md hover:bg-white/10 hover:text-white transition-colors disabled:opacity-50"
             >
               Cancel
             </button>

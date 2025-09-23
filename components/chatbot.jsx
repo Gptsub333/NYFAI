@@ -145,7 +145,7 @@ export function ChatBot() {
                     transition={{ duration: 2, repeat: Number.POSITIVE_INFINITY, ease: "linear" }}
                     className="w-7 h-7 bg-transparent rounded-full flex items-center justify-center"
                   >
-                    <Image src="./ai_logo.png" height={25} width={25} />
+                    <Image src="/nyfai.svg" height={25} width={25} />
                   </motion.div>
                   <CardTitle className="text-base font-semibold">AI Assistant</CardTitle>
                 </div>
