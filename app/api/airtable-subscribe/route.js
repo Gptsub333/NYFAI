@@ -5,8 +5,8 @@ export async function POST(req) {
 
     if (!name || !email) return new Response(JSON.stringify({ error: 'Name and Email required' }), { status: 400 });
 
-    const airtableApiKey = process.env.VITE_AIRTABLE_API_KEY;
-    const baseId = process.env.VITE_AIRTABLE_BASE_ID;
+    const airtableApiKey = process.env.AIRTABLE_API_KEY;
+    const baseId = process.env.AIRTABLE_BASE_ID;
     const tableName = process.env.VITE_AIRTABLE_TABLE_NAME;
 
     if (!airtableApiKey || !baseId || !tableName) {

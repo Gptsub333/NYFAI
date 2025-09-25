@@ -7,7 +7,7 @@ export async function POST(req) {
 
     if (!email) return new Response(JSON.stringify({ error: 'Email is required' }), { status: 400 });
 
-    const beehiivApiKey = process.env.VITE_BEEHIIV_API_KEY;
+    const beehiivApiKey = process.env.BEEHIIV_API_KEY;
     const beehiivPubId = process.env.VITE_BEEHIIV_PUBLICATION_ID;
 
     if (!beehiivApiKey || !beehiivPubId) {
