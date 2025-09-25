@@ -5,6 +5,7 @@ import { Footer } from "@/components/footer"
 import { AuthProvider } from "@/components/auth-provider"
 import NewsletterModule from "@/components/newsletter-modal"
 import { ChatBot } from "@/components/chatbot"
+import { BlogProvider } from "@/contexts/BlogContext"  // Import BlogProvider
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -24,13 +25,16 @@ export default function RootLayout({ children }) {
     <html lang="en" className="dark" suppressHydrationWarning>
       <body className={`${inter.className} bg-background text-foreground`}>
         <AuthProvider>
-          <div className="min-h-screen">
-            <Header />
-            <main className="pt-16">{children}</main>
-            <NewsletterModule />
-            <Footer />
-            <ChatBot />
-          </div>
+          {/* Wrap the entire layout in BlogProvider */}
+          <BlogProvider>
+            <div className="min-h-screen">
+              <Header />
+              <main className="pt-16">{children}</main>
+              <NewsletterModule />
+              <Footer />
+              <ChatBot />
+            </div>
+          </BlogProvider>
         </AuthProvider>
       </body>
     </html>

@@ -297,7 +297,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Plus, X, Upload, Edit } from "lucide-react"
 
 export default function EpisodesPage() {
-  const [episodes, setEpisodes] = useState<any[]>([{
+  const [episodes, setEpisodes] = useState([{
     title: "",
     episode: "",
     link: "",
@@ -312,7 +312,7 @@ export default function EpisodesPage() {
     description: "",
     image: "",
   })
-  const [editingEpisode, setEditingEpisode] = useState<any>(null); // holds the episode being edited
+  const [editingEpisode, setEditingEpisode] = useState(null); // holds the episode being edited
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);  // controls the edit dialog
   const [fetchingEpisodes, setFetchingEpisodes] = useState(true); // State for fetching episodes
 
@@ -338,7 +338,7 @@ export default function EpisodesPage() {
     fetchEpisodes()
   }, [])
 
-  const handleAddEpisode = async (e: any) => {
+  const handleAddEpisode = async (e) => {
     e.preventDefault();
 
     if (!formData.title || !formData.episode || !formData.description) return;
@@ -402,7 +402,10 @@ export default function EpisodesPage() {
 
 
 
-  const removeEpisode = async (index: number, episodeId: string) => {
+  const removeEpisode = async (index, episodeId) => {
+    if (!confirm("Are you sure you want to delete this Episode? This action cannot be undone.")) {
+      return
+    }
     setLoading(true)
     try {
       const response = await fetch("/api/episodes", {
@@ -425,18 +428,18 @@ export default function EpisodesPage() {
     }
   }
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = (e) => {
     const file = e.target.files?.[0];
     if (file) {
       const reader = new FileReader();
       reader.onload = (e) => {
-        setFormData({ ...formData, image: e.target?.result as string }); // store base64 image
+        setFormData({ ...formData, image: e.target?.result }); // store base64 image
       };
       reader.readAsDataURL(file);
     }
   };
 
-  const handleEditEpisode = async (e: any) => {
+  const handleEditEpisode = async (e) => {
     e.preventDefault();
     if (!editingEpisode) return;
 
@@ -784,4 +787,3 @@ export default function EpisodesPage() {
     </div>
   )
 }
-

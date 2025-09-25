@@ -596,6 +596,9 @@ export default function PromptLibraryPage() {
 
   // Remove a prompt
   const removePrompt = async (id) => {
+    if (!confirm("Are you sure you want to delete this Prompt? This action cannot be undone.")) {
+      return
+    }
     setIsRemovingPrompt(true);
 
     try {

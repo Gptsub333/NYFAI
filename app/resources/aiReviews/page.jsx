@@ -1621,7 +1621,7 @@ export default function AIReviewsPage() {
                       return (
                         <label
                           key={option}
-                          className="flex items-center space-x-2 cursor-pointer hover:bg-gray-50 p-1 rounded"
+                          className="flex items-center space-x-2 cursor-pointer hover:bg-gray-600 p-1 rounded"
                         >
                           <input
                             type="checkbox"

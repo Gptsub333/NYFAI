@@ -165,6 +165,9 @@ export default function Certifications() {
     };
 
     const handleRemoveCertification = async (index, certificationId) => {
+        if (!confirm("Are you sure you want to delete this Certificate? This action cannot be undone.")) {
+            return
+        }
         setDeleteLoading(certificationId);
         try {
             const response = await fetch("/api/certifications", {

@@ -4,8 +4,7 @@ import { useState, useEffect } from "react"
 import { Search, ChevronLeft, ChevronRight, Plus, Minus, Edit, Trash2, X, Upload } from "lucide-react"
 import BlogDetail from "../../../components/BlogDetail"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-
+import { useBlogContext } from "../../../contexts/BlogContext"
 
 const Dialog = ({ isOpen, onClose, title, children }) => {
   if (!isOpen) return null
@@ -26,14 +25,28 @@ const Dialog = ({ isOpen, onClose, title, children }) => {
 }
 
 export default function Articles() {
-  const [searchTerm, setSearchTerm] = useState("")
-  const [selectedTypes, setSelectedTypes] = useState([])
-  const [selectedCategories, setSelectedCategories] = useState([])
-  const [selectedIndustries, setSelectedIndustries] = useState([])
-  const [currentPage, setCurrentPage] = useState(1)
+  const {
+    blogListCache,
+    fetchBlogList,
+    addBlogToCache,
+    updateBlogInCache,
+    removeBlogFromCache,
+    saveScrollPosition,
+    restoreScrollPosition,
+    currentPage: contextCurrentPage, // Renamed to avoid conflict
+    setCurrentPage: setContextCurrentPage, // Renamed to avoid conflict
+    filters,
+    setFilters,
+  } = useBlogContext()
+
   const [filteredBlogs, setFilteredBlogs] = useState([])
   const [loading, setLoading] = useState(true)
   const [blogData, setBlogData] = useState([])
+
+  const [searchTerm, setSearchTerm] = useState(filters.searchTerm)
+  const [selectedTypes, setSelectedTypes] = useState(filters.selectedTypes)
+  const [selectedCategories, setSelectedCategories] = useState(filters.selectedCategories)
+  const [selectedIndustries, setSelectedIndustries] = useState(filters.selectedIndustries)
 
   const [isTypeExpanded, setIsTypeExpanded] = useState(true)
   const [isCategoryExpanded, setIsCategoryExpanded] = useState(true)
@@ -56,7 +69,7 @@ export default function Articles() {
     type: "",
     industry: "",
     tags: "",
-    date: new Date().toISOString().split('T')[0], // Default to today
+    date: new Date().toISOString().split("T")[0], // Default to today
   })
 
   const [selectedBlogForView, setSelectedBlogForView] = useState(null)
@@ -89,16 +102,12 @@ export default function Articles() {
   ]
 
   // API Functions
-  const fetchArticles = async () => {
+  const fetchArticles = async (forceRefresh = false) => {
     setLoading(true)
     setFetchingArticles(true)
     try {
-      const res = await fetch("/api/articles")
-      if (!res.ok) {
-        throw new Error('Failed to fetch articles')
-      }
-      const data = await res.json()
-      setBlogData(Array.isArray(data) ? data : [])
+      const data = await fetchBlogList(forceRefresh)
+      setBlogData(data)
     } catch (error) {
       console.error("Error fetching articles:", error)
       setBlogData([])
@@ -110,36 +119,36 @@ export default function Articles() {
 
   // Fixed handleImageUpload function with proper parameter
   const handleImageUpload = async (e) => {
-    const file = e.target.files?.[0];
+    const file = e.target.files?.[0]
     if (file) {
-      const reader = new FileReader();
+      const reader = new FileReader()
       reader.onload = (event) => {
-        setFormData({ ...formData, image: event.target?.result }); // store base64 image
-      };
-      reader.readAsDataURL(file);
+        setFormData({ ...formData, image: event.target?.result }) // store base64 image
+      }
+      reader.readAsDataURL(file)
     }
   }
 
   const createArticle = async (articleData) => {
     try {
-      let imageUrl = formData.image;
+      let imageUrl = formData.image
 
       // If a new local image is selected, upload it first
       if (formData.image && formData.image.startsWith("data:image")) {
-        const base64String = formData.image.split(",")[1];
-        const fileName = `article-${Date.now()}.jpg`;
-        const bucketName = "nyfai-website-image";
+        const base64String = formData.image.split(",")[1]
+        const fileName = `article-${Date.now()}.jpg`
+        const bucketName = "nyfai-website-image"
 
         const uploadRes = await fetch("/api/upload", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ imageData: base64String, bucketName, fileName }),
-        });
+        })
 
-        if (!uploadRes.ok) throw new Error("Failed to upload image");
+        if (!uploadRes.ok) throw new Error("Failed to upload image")
 
-        const data = await uploadRes.json();
-        imageUrl = data.imageUrl;
+        const data = await uploadRes.json()
+        imageUrl = data.imageUrl
       }
 
       // Prepare payload with proper handling of empty select fields
@@ -151,40 +160,42 @@ export default function Articles() {
         image: imageUrl,
         date: formatDateForAirtable(formData.date),
         readTime: "5 Min Read",
-      };
+      }
 
       // Only include select fields if they have valid values
       if (formData.category && formData.category.trim()) {
-        payload.category = formData.category;
+        payload.category = formData.category
       }
       if (formData.type && formData.type.trim()) {
-        payload.type = formData.type;
+        payload.type = formData.type
       }
       if (formData.industry && formData.industry.trim()) {
-        payload.industry = formData.industry;
+        payload.industry = formData.industry
       }
       if (formData.tags && formData.tags.trim()) {
-        payload.tags = formData.tags;
+        payload.tags = formData.tags
       }
 
       setApiLoading(true)
-      const response = await fetch('/api/articles', {
-        method: 'POST',
+      const response = await fetch("/api/articles", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify(payload),
       })
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}))
-        throw new Error(errorData.message || 'Failed to create article')
+        throw new Error(errorData.message || "Failed to create article")
       }
 
       const newArticle = await response.json()
+      addBlogToCache(newArticle)
+      setBlogData((prev) => [newArticle, ...prev])
       return newArticle
     } catch (error) {
-      console.error('Error creating article:', error)
+      console.error("Error creating article:", error)
       throw error
     } finally {
       setApiLoading(false)
@@ -195,48 +206,53 @@ export default function Articles() {
   const updateArticle = async (articleData) => {
     try {
       setApiLoading(true)
-      let imageUrl = formData.image;
+      let imageUrl = formData.image
 
       // If a new local image is selected, upload it first
       if (formData.image && formData.image.startsWith("data:image")) {
-        const base64String = formData.image.split(",")[1];
-        const fileName = `article-${Date.now()}-updated.jpg`;
-        const bucketName = "nyfai-website-image";
+        const base64String = formData.image.split(",")[1]
+        const fileName = `article-${Date.now()}-updated.jpg`
+        const bucketName = "nyfai-website-image"
 
         const uploadRes = await fetch("/api/upload", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ imageData: base64String, bucketName, fileName }),
-        });
+        })
 
-        if (!uploadRes.ok) throw new Error("Failed to upload image");
+        if (!uploadRes.ok) throw new Error("Failed to upload image")
 
-        const data = await uploadRes.json();
-        imageUrl = data.imageUrl;
+        const data = await uploadRes.json()
+        imageUrl = data.imageUrl
       }
 
-      const response = await fetch('/api/articles', {
-        method: 'PUT',
+      const response = await fetch("/api/articles", {
+        method: "PUT",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           id: articleData.id,
           ...articleData,
           image: imageUrl,
-          content: typeof articleData.content === 'string' ? articleData.content : JSON.stringify(articleData.content || { blocks: [] })
-        })
+          content:
+            typeof articleData.content === "string"
+              ? articleData.content
+              : JSON.stringify(articleData.content || { blocks: [] }),
+        }),
       })
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}))
-        throw new Error(errorData.message || 'Failed to update article')
+        throw new Error(errorData.message || "Failed to update article")
       }
 
       const updatedArticle = await response.json()
+      updateBlogInCache(articleData.id, updatedArticle)
+      setBlogData((prev) => prev.map((blog) => (blog.id === articleData.id ? updatedArticle : blog)))
       return updatedArticle
     } catch (error) {
-      console.error('Error updating article:', error)
+      console.error("Error updating article:", error)
       throw error
     } finally {
       setApiLoading(false)
@@ -244,24 +260,29 @@ export default function Articles() {
   }
 
   const deleteArticle = async (id) => {
+    if (!confirm("Are you sure you want to delete this Article? This action cannot be undone.")) {
+      return
+    }
     try {
       setApiLoading(true)
-      const response = await fetch('/api/articles', {
-        method: 'DELETE',
+      const response = await fetch("/api/articles", {
+        method: "DELETE",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
-        body: JSON.stringify({ id })
+        body: JSON.stringify({ id }),
       })
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}))
-        throw new Error(errorData.message || 'Failed to delete article')
+        throw new Error(errorData.message || "Failed to delete article")
       }
 
+      removeBlogFromCache(id)
+      setBlogData((prev) => prev.filter((blog) => blog.id !== id))
       return await response.json()
     } catch (error) {
-      console.error('Error deleting article:', error)
+      console.error("Error deleting article:", error)
       throw error
     } finally {
       setApiLoading(false)
@@ -269,44 +290,56 @@ export default function Articles() {
   }
 
   useEffect(() => {
-    fetchArticles()
-  }, [])
+    if (blogListCache) {
+      console.log("[v0] Using cached blog list data")
+      setBlogData(blogListCache)
+      setLoading(false)
+      // Restore scroll position after data is set
+      setTimeout(() => {
+        restoreScrollPosition()
+      }, 100)
+    } else {
+      console.log("[v0] No cache found, fetching blog list")
+      fetchArticles()
+    }
+  }, [blogListCache, restoreScrollPosition])
 
   useEffect(() => {
-    let filtered = blogData
-
-    // Filter by search term
-    if (searchTerm) {
-      filtered = filtered.filter(
-        (blog) =>
-          blog.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          blog.excerpt?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          blog.author?.toLowerCase().includes(searchTerm.toLowerCase()),
-      )
+    if (!blogData || blogData.length === 0) {
+      setFilteredBlogs([])
+      return
     }
 
-    // Filter by categories
-    if (selectedCategories.length > 0) {
-      filtered = filtered.filter((blog) => selectedCategories.includes(blog.category))
-    }
+    const filtered = blogData.filter((blog) => {
+      const matchesSearch =
+        !searchTerm ||
+        blog.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        blog.excerpt?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        blog.author?.toLowerCase().includes(searchTerm.toLowerCase())
 
-    // Filter by type
-    if (selectedTypes.length > 0) {
-      filtered = filtered.filter((blog) => selectedTypes.includes(blog.type))
-    }
+      const matchesType = selectedTypes.length === 0 || selectedTypes.includes(blog.type)
+      const matchesCategory = selectedCategories.length === 0 || selectedCategories.includes(blog.category)
+      const matchesIndustry = selectedIndustries.length === 0 || selectedIndustries.includes(blog.industry)
 
-    // Filter by industries
-    if (selectedIndustries.length > 0) {
-      filtered = filtered.filter((blog) => selectedIndustries.includes(blog.industry))
-    }
+      return matchesSearch && matchesType && matchesCategory && matchesIndustry
+    })
 
     setFilteredBlogs(filtered)
-    setCurrentPage(1)
-  }, [searchTerm, selectedTypes, selectedCategories, selectedIndustries, blogData])
+    console.log(`[v0] Filtered ${filtered.length} blogs from ${blogData.length} total`)
+  }, [blogData, searchTerm, selectedTypes, selectedCategories, selectedIndustries])
+
+  useEffect(() => {
+    setFilters({
+      searchTerm,
+      selectedTypes,
+      selectedCategories,
+      selectedIndustries,
+    })
+  }, [searchTerm, selectedTypes, selectedCategories, selectedIndustries])
 
   // Helper function to format date for Airtable
   const formatDateForAirtable = (dateString) => {
-    if (!dateString) return new Date().toISOString().split('T')[0]
+    if (!dateString) return new Date().toISOString().split("T")[0]
 
     // If it's already in YYYY-MM-DD format, return as is
     if (dateString.match(/^\d{4}-\d{2}-\d{2}$/)) {
@@ -315,19 +348,19 @@ export default function Articles() {
 
     // If it's in MM/DD/YYYY format, convert it
     if (dateString.match(/^\d{1,2}\/\d{1,2}\/\d{4}$/)) {
-      const [month, day, year] = dateString.split('/')
-      return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`
+      const [month, day, year] = dateString.split("/")
+      return `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`
     }
 
     // Try to parse as a regular date and format
     try {
       const date = new Date(dateString)
       if (isNaN(date.getTime())) {
-        return new Date().toISOString().split('T')[0]
+        return new Date().toISOString().split("T")[0]
       }
-      return date.toISOString().split('T')[0]
+      return date.toISOString().split("T")[0]
     } catch (error) {
-      return new Date().toISOString().split('T')[0]
+      return new Date().toISOString().split("T")[0]
     }
   }
 
@@ -339,13 +372,12 @@ export default function Articles() {
         readTime: "5 Min Read",
       }
 
-      await createArticle(articleData)
-      await fetchArticles()
+      const newArticle = await createArticle(articleData)
 
       setIsAddDialogOpen(false)
       resetForm()
     } catch (error) {
-      alert('Error creating article: ' + error.message)
+      alert("Error creating article: " + error.message)
     }
   }
 
@@ -359,25 +391,23 @@ export default function Articles() {
       }
 
       await updateArticle(articleData)
-      await fetchArticles()
 
       setIsEditDialogOpen(false)
       resetForm()
       setSelectedBlog(null)
     } catch (error) {
-      alert('Error updating article: ' + error.message)
+      alert("Error updating article: " + error.message)
     }
   }
 
   const handleDeleteBlog = async () => {
     try {
       await deleteArticle(selectedBlog.id)
-      await fetchArticles()
 
       setIsDeleteDialogOpen(false)
       setSelectedBlog(null)
     } catch (error) {
-      alert('Error deleting article: ' + error.message)
+      alert("Error deleting article: " + error.message)
     }
   }
 
@@ -393,7 +423,11 @@ export default function Articles() {
       type: blog.type || "",
       industry: blog.industry || "",
       tags: blog.tags || "",
-      date: blog.date ? (blog.date.includes('T') ? blog.date.split('T')[0] : blog.date) : new Date().toISOString().split('T')[0],
+      date: blog.date
+        ? blog.date.includes("T")
+          ? blog.date.split("T")[0]
+          : blog.date
+        : new Date().toISOString().split("T")[0],
     })
     setIsEditDialogOpen(true)
   }
@@ -414,7 +448,7 @@ export default function Articles() {
       type: "",
       industry: "",
       tags: "",
-      date: new Date().toISOString().split('T')[0],
+      date: new Date().toISOString().split("T")[0],
     })
   }
 
@@ -473,15 +507,16 @@ export default function Articles() {
 
   // Pagination logic
   const totalPages = Math.ceil(filteredBlogs.length / blogsPerPage)
-  const startIndex = (currentPage - 1) * blogsPerPage
+  const startIndex = (contextCurrentPage - 1) * blogsPerPage // Use contextCurrentPage
   const currentBlogs = filteredBlogs.slice(startIndex, startIndex + blogsPerPage)
 
   const handlePageChange = (page) => {
-    setCurrentPage(page)
+    setContextCurrentPage(page) // Use setContextCurrentPage
     window.scrollTo({ top: 0, behavior: "smooth" })
   }
 
   const handleBlogClick = (blog) => {
+    saveScrollPosition()
     setSelectedBlogForView(blog.id)
     setIsViewingBlog(true)
   }
@@ -489,21 +524,16 @@ export default function Articles() {
   const handleBackToList = () => {
     setIsViewingBlog(false)
     setSelectedBlogForView(null)
-    fetchArticles()
+    restoreScrollPosition()
   }
 
   const handleBlogDeleted = (deletedId) => {
-    fetchArticles()
+    removeBlogFromCache(deletedId)
+    setBlogData((prev) => prev.filter((blog) => blog.id !== deletedId))
   }
 
   if (isViewingBlog && selectedBlogForView) {
-    return (
-      <BlogDetail
-        blogId={selectedBlogForView}
-        onBack={handleBackToList}
-        onBlogDeleted={handleBlogDeleted}
-      />
-    )
+    return <BlogDetail blogId={selectedBlogForView} onBack={handleBackToList} onBlogDeleted={handleBlogDeleted} />
   }
 
   return (
@@ -637,7 +667,7 @@ export default function Articles() {
               {/* No Results Message */}
               {currentBlogs.length === 0 && !loading && (
                 <div className="text-center py-20">
-                  <div className="text-gray-400 text-lg mb-4">No articles found</div>
+                  <div className="text-gray-400 text-lg mb-4">Your article will be here</div>
                   <p className="text-gray-500">Try adjusting your search or filter criteria</p>
                 </div>
               )}
@@ -648,7 +678,7 @@ export default function Articles() {
                   {currentBlogs.map((blog) => (
                     <div
                       key={blog.id}
-                      className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl shadow-xl overflow-hidden hover:shadow-2xl hover:bg-white/10 transition-all duration-300 group cursor-pointer"
+                      className="bg-white/5 backdrop-blur-sm border border-white/100 rounded-xl shadow-xl overflow-hidden hover:shadow-2xl hover:bg-white/10 transition-all duration-300 group cursor-pointer"
                       onClick={() => handleBlogClick(blog)}
                     >
                       <div className="relative">
@@ -657,7 +687,7 @@ export default function Articles() {
                           alt={blog.title || "Article image"}
                           className="w-full h-48 object-cover"
                           onError={(e) => {
-                            e.target.src = "/placeholder.svg";
+                            e.target.src = "/placeholder.svg"
                           }}
                         />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
@@ -686,23 +716,25 @@ export default function Articles() {
                       </div>
                       <div className="p-6">
                         <div className="text-sm text-gray-300 mb-2">
-                          {blog.date ? new Date(blog.date).toLocaleDateString() : 'No date'}
+                          {blog.date ? new Date(blog.date).toLocaleDateString() : "No date"}
                         </div>
                         <h3 className="text-lg font-semibold text-white mb-3 line-clamp-2 leading-tight hover:text-[#1a729c] transition-colors">
-                          {blog.title || 'Untitled'}
+                          {blog.title || "Untitled"}
                         </h3>
                         <div className="flex items-center gap-2 mb-3">
                           <div className="w-8 h-8 bg-gradient-to-r from-[#1a729c] to-[#165881] rounded-full flex items-center justify-center shadow-lg">
                             <span className="text-xs font-medium text-white">
-                              {(blog.author || 'Unknown')
+                              {(blog.author || "Unknown")
                                 .split(" ")
                                 .map((n) => n[0])
                                 .join("")}
                             </span>
                           </div>
-                          <span className="text-sm text-gray-300 font-medium">{blog.author || 'Unknown Author'}</span>
+                          <span className="text-sm text-gray-300 font-medium">{blog.author || "Unknown Author"}</span>
                         </div>
-                        <p className="text-gray-400 text-sm line-clamp-3 leading-relaxed">{blog.excerpt || 'No excerpt available'}</p>
+                        <p className="text-gray-400 text-sm line-clamp-3 leading-relaxed">
+                          {blog.excerpt || "No excerpt available"}
+                        </p>
                       </div>
                     </div>
                   ))}
@@ -713,8 +745,8 @@ export default function Articles() {
               {totalPages > 1 && (
                 <div className="flex items-center justify-center gap-2">
                   <button
-                    onClick={() => handlePageChange(currentPage - 1)}
-                    disabled={currentPage === 1}
+                    onClick={() => handlePageChange(contextCurrentPage - 1)}
+                    disabled={contextCurrentPage === 1}
                     className="flex items-center gap-1 px-6 py-3 text-gray-300 hover:text-white hover:bg-white/10 disabled:opacity-50 disabled:cursor-not-allowed font-medium rounded-lg transition-all duration-200"
                   >
                     <ChevronLeft className="w-4 h-4" />
@@ -727,7 +759,7 @@ export default function Articles() {
                       <button
                         key={page}
                         onClick={() => handlePageChange(page)}
-                        className={`w-12 h-12 rounded-lg font-medium transition-all duration-200 ${currentPage === page
+                        className={`w-12 h-12 rounded-lg font-medium transition-all duration-200 ${contextCurrentPage === page
                           ? "bg-gradient-to-r from-[#1a729c] to-[#165881] text-white shadow-lg"
                           : "text-gray-300 hover:text-white hover:bg-white/10"
                           }`}
@@ -738,8 +770,8 @@ export default function Articles() {
                   })}
 
                   <button
-                    onClick={() => handlePageChange(currentPage + 1)}
-                    disabled={currentPage === totalPages}
+                    onClick={() => handlePageChange(contextCurrentPage + 1)}
+                    disabled={contextCurrentPage === totalPages}
                     className="flex items-center gap-1 px-6 py-3 text-gray-300 hover:text-white hover:bg-white/10 disabled:opacity-50 disabled:cursor-not-allowed font-medium rounded-lg transition-all duration-200"
                   >
                     Next
@@ -818,11 +850,11 @@ export default function Articles() {
               {formData.image && (
                 <div className="relative">
                   <img
-                    src={formData.image}
+                    src={formData.image || "/placeholder.svg"}
                     alt="Preview"
                     className="w-16 h-16 object-cover rounded-md"
                     onError={(e) => {
-                      e.target.src = "/placeholder.svg";
+                      e.target.src = "/placeholder.svg"
                     }}
                   />
                   <button
@@ -929,10 +961,18 @@ export default function Articles() {
           <div className="flex gap-3 pt-4">
             <button
               onClick={handleAddBlog}
-              disabled={!formData.title || !formData.author || !formData.category || !formData.excerpt || !formData.type || !formData.industry || apiLoading}
+              disabled={
+                !formData.title ||
+                !formData.author ||
+                !formData.category ||
+                !formData.excerpt ||
+                !formData.type ||
+                !formData.industry ||
+                apiLoading
+              }
               className="flex-1 bg-[#1a729c] text-white py-2 px-4 rounded-md hover:bg-[#165881] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
-              {apiLoading ? 'Creating...' : 'Add Article'}
+              {apiLoading ? "Creating..." : "Add Article"}
             </button>
             <button
               onClick={() => {
@@ -1011,11 +1051,11 @@ export default function Articles() {
               {formData.image && (
                 <div className="relative">
                   <img
-                    src={formData.image}
+                    src={formData.image || "/placeholder.svg"}
                     alt="Preview"
                     className="w-16 h-16 object-cover rounded-md"
                     onError={(e) => {
-                      e.target.src = "/placeholder.svg";
+                      e.target.src = "/placeholder.svg"
                     }}
                   />
                   <button
@@ -1124,10 +1164,18 @@ export default function Articles() {
           <div className="flex gap-3 pt-4">
             <button
               onClick={handleEditBlog}
-              disabled={!formData.title || !formData.author || !formData.category || !formData.excerpt || !formData.type || !formData.industry || apiLoading}
+              disabled={
+                !formData.title ||
+                !formData.author ||
+                !formData.category ||
+                !formData.excerpt ||
+                !formData.type ||
+                !formData.industry ||
+                apiLoading
+              }
               className="flex-1 bg-[#1a729c] text-white py-2 px-4 rounded-md hover:bg-[#165881] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
-              {apiLoading ? 'Updating...' : 'Update Article'}
+              {apiLoading ? "Updating..." : "Update Article"}
             </button>
             <button
               onClick={() => {
@@ -1167,7 +1215,7 @@ export default function Articles() {
               disabled={apiLoading}
               className="flex-1 bg-red-600 text-white py-2 px-4 rounded-md hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
-              {apiLoading ? 'Deleting...' : 'Delete Article'}
+              {apiLoading ? "Deleting..." : "Delete Article"}
             </button>
             <button
               onClick={() => {

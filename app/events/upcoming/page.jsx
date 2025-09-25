@@ -100,6 +100,9 @@ export default function UpcomingEvents() {
   }
 
   const handleRemoveEvent = async (eventId) => {
+    if (!confirm("Are you sure you want to delete this Event? This action cannot be undone.")) {
+      return
+    }
     try {
       setLoading(true)
 

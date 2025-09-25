@@ -1,6 +1,6 @@
 "use client"
 
-import type React from "react"
+import React from "react"
 
 import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -16,20 +16,9 @@ import Certifications from "@/components/certifications"
 import Instructors from "@/components/Instructors"
 import Loader from "@/components/Loader"
 
-type Course = {
-  id?: string;
-  title: string;
-  description: string;
-  level: string;
-  duration: string;
-  students: number;
-  rating: number;
-  progress: number;
-  image: string;
-  externalLink: string;
-};
+
 export default function OnlineCourse() {
-  const [courses, setCourses] = useState<Course[]>([
+  const [courses, setCourses] = useState([
     // {
     //   title: "Artificial Intelligence for Project Managers",
     //   description: "Learn how AI can optimize your project planning, risk assessment, and stakeholder communication.",
@@ -60,7 +49,7 @@ export default function OnlineCourse() {
 
   const [isAddCourseOpen, setIsAddCourseOpen] = useState(false)
   const [deleteLoading, setDeleteLoading] = useState(false);
-  const [editingCourse, setEditingCourse] = useState<Course | null>(null); // course being edited
+  const [editingCourse, setEditingCourse] = useState(null); // course being edited
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);  // controls the edit dialog visibility
   const [formData, setFormData] = useState({
     title: "",
@@ -180,7 +169,7 @@ export default function OnlineCourse() {
     }
   };
 
-  const handleEditCourse = async (e: any) => {
+  const handleEditCourse = async (e) => {
     e.preventDefault();
     if (!editingCourse) return;
 
@@ -245,7 +234,10 @@ export default function OnlineCourse() {
     }
   };
 
-  const handleRemoveCourse = async (index: number, courseId: string) => {
+  const handleRemoveCourse = async (index, courseId) => {
+    if (!confirm("Are you sure you want to delete this course? This action cannot be undone.")) {
+      return
+    }
     setDeleteLoading(true);
     try {
       const response = await fetch("/api/courses", {
@@ -273,31 +265,31 @@ export default function OnlineCourse() {
     setFormData({ ...formData, image: "" });
 
     // Manually reset the input value
-    const imageInput = document.getElementById("image-upload-edit") as HTMLInputElement;
+    const imageInput = document.getElementById("image-upload-edit");
     if (imageInput) {
       imageInput.value = ""; // Clear the file input field
     }
   };
 
   // Image upload handler for ADD NEW COURSE dialog
-  const handleAddCourseImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAddCourseImageUpload = (e) => {
     const file = e.target.files?.[0];
     if (file) {
       const reader = new FileReader();
       reader.onload = (e) => {
-        setNewCourse({ ...newCourse, image: e.target?.result as string }); // Store the base64 image in newCourse state
+        setNewCourse({ ...newCourse, image: e.target?.result }); // Store the base64 image in newCourse state
       };
       reader.readAsDataURL(file);
     }
   };
 
   // Image upload handler for EDIT COURSE dialog
-  const handleEditCourseImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleEditCourseImageUpload = (e) => {
     const file = e.target.files?.[0];
     if (file) {
       const reader = new FileReader();
       reader.onload = (e) => {
-        setFormData({ ...formData, image: e.target?.result as string }); // Store the base64 image in formData state
+        setFormData({ ...formData, image: e.target?.result }); // Store the base64 image in formData state
       };
       reader.readAsDataURL(file);
     }
@@ -306,7 +298,7 @@ export default function OnlineCourse() {
   // Remove image for ADD NEW COURSE
   const handleAddCourseImageRemove = () => {
     setNewCourse({ ...newCourse, image: "" });
-    const imageInput = document.getElementById("image-upload-add") as HTMLInputElement;
+    const imageInput = document.getElementById("image-upload-add");
     if (imageInput) {
       imageInput.value = "";
     }
@@ -446,7 +438,7 @@ export default function OnlineCourse() {
                       />
                       <label
                         htmlFor="image-upload-add"
-                        className="flex items-center space-x-2 px-4 py-2 border border-gray-300 rounded-md cursor-pointer hover:bg-gray-50"
+                        className="flex items-center space-x-2 px-4 py-2 border border-gray-300 rounded-md cursor-pointer hover:bg-gray-800"
                       >
                         <Upload className="w-4 h-4" />
                         <span>Upload Image</span>
@@ -693,7 +685,7 @@ export default function OnlineCourse() {
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="absolute top-2 right-2 h-8 w-8 p-0 hover:bg-red-100 hover:text-red-600 z-10 bg-white/80 backdrop-blur-sm"
+                    className="absolute top-2 right-2 h-8 w-8 p-0 hover:bg-red-100 hover:text-red-600 z-10 bg-gray/80 backdrop-blur-sm"
                     onClick={() => course.id && handleRemoveCourse(index, course.id)} // Only call if id is defined
                   >
                     {deleteLoading ? (<span className="loader"></span>) : (<X className="h-4 w-4" />)}

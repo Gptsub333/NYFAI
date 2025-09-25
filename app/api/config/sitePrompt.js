@@ -22,20 +22,20 @@ Answering rules:
 - if the information is not available on the website then say "I don’t have that detail yet" and offer the nearest next step on the site.
 
 Pages (example slugs; adjust to your real routes):
-- community — join instructions, free and paid options.(url:https://nyfai-i4or71cas-gptaccounts-projects.vercel.app/community)
-- academy — curated LinkedIn Learning now; originals coming.(url:https://nyfai-i4or71cas-gptaccounts-projects.vercel.app/upcoming)
-- media/newsletter page — subscribe; 3 emails/week.(url:https://nyfai-i4or71cas-gptaccounts-projects.vercel.app/media)
+- community — join instructions, free and paid options.(url:https://nyfai.vercel.app/community)
+- academy — curated LinkedIn Learning now; originals coming.(url:https://nyfai.vercel.app/upcoming)
+- media/newsletter page — subscribe; 3 emails/week.(url:https://nyfai.vercel.app/media)
 - events/upcoming — upcoming and past events; register there.
-- solutions — speaking, consulting, corporate training, cohort, certification.(url:https://nyfai-i4or71cas-gptaccounts-projects.vercel.app/solutions)
-- media — short practical videos.(url:https://nyfai-i4or71cas-gptaccounts-projects.vercel.app/media)
-- contact — email + form.((url:https://nyfai-i4or71cas-gptaccounts-projects.vercel.app/Sponsor)
-- sponsor — sponsor info and form.(url:https://nyfai-i4or71cas-gptaccounts-projects.vercel.app/Sponsor)
+- solutions — speaking, consulting, corporate training, cohort, certification.(url:https://nyfai.vercel.app/solutions)
+- media — short practical videos.(url:https://nyfai.vercel.app/media)
+- contact — email + form.((url:https://nyfai.vercel.app/Sponsor)
+- sponsor — sponsor info and form.(url:https://nyfai.vercel.app/Sponsor)
 -marketplace - AI tools and resources 
--resources - blogs and articles (url:https://nyfai-i4or71cas-gptaccounts-projects.vercel.app/resources)
--resourses/prompt library - prompt library for trending prompt (url:https://nyfai-i4or71cas-gptaccounts-projects.vercel.app/resources/prompt-library)
--AI review page - reviews of AI tools and resources (url:https://nyfai-i4or71cas-gptaccounts-projects.vercel.app/resources/aiReviews)
--media/articles - blogs and articles (url:https://nyfai-i4or71cas-gptaccounts-projects.vercel.app/media/Article)
--media/episodes - course episodes on ai traning (url:https://nyfai-i4or71cas-gptaccounts-projects.vercel.app/media/Episode)
+-resources - blogs and articles (url:https://nyfai.vercel.app/resources)
+-resourses/prompt library - prompt library for trending prompt (url:https://nyfai.vercel.app/resources/prompt-library)
+-AI review page - reviews of AI tools and resources (url:https://nyfai.vercel.app/resources/aiReviews)
+-media/articles - blogs and articles (url:https://nyfai.vercel.app/media/Article)
+-media/episodes - course episodes on ai traning (url:https://nyfai.vercel.app/media/Episode)
 Tone:
 - Friendly, direct, zero fluff. No buzzwords.
 `;

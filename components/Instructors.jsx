@@ -11,22 +11,14 @@ import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 
-interface Instructor {
-    id?: string;
-    name: string;
-    title: string;
-    experience: string;
-    avatar: string;
-    bio: string;
-    profileLink: string;
-}
+
 
 export default function Instructors() {
-    const [instructors, setInstructors] = useState<Instructor[]>([])
+    const [instructors, setInstructors] = useState([])
     const [fetchingInstructors, setFetchingInstructors] = useState(true);
     const [loading, setLoading] = useState(false);
-    const [deleteLoading, setDeleteLoading] = useState<string | null>(null);
-    const [editingInstructor, setEditingInstructor] = useState<Instructor | null>(null);
+    const [deleteLoading, setDeleteLoading] = useState();
+    const [editingInstructor, setEditingInstructor] = useState();
     const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
     const [isAddInstructorOpen, setIsAddInstructorOpen] = useState(false)
@@ -145,7 +137,7 @@ export default function Instructors() {
         }
     }
 
-    const handleEditInstructor = async (e: React.FormEvent) => {
+    const handleEditInstructor = async (e) => {
         e.preventDefault();
         if (!editingInstructor) return;
 
@@ -208,7 +200,10 @@ export default function Instructors() {
         }
     };
 
-    const handleRemoveInstructor = async (index: number, instructorId: string) => {
+    const handleRemoveInstructor = async (index, instructorId) => {
+        if (!confirm("Are you sure you want to delete this Instructor? This action cannot be undone.")) {
+            return
+        }
         setDeleteLoading(instructorId);
         try {
             const response = await fetch("/api/instructors", {
@@ -232,24 +227,24 @@ export default function Instructors() {
     }
 
     // Image upload handler for ADD NEW INSTRUCTOR dialog
-    const handleAddInstructorImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleAddInstructorImageUpload = (e) => {
         const file = e.target.files?.[0]
         if (file) {
             const reader = new FileReader()
             reader.onload = (e) => {
-                setNewInstructor({ ...newInstructor, avatar: e.target?.result as string })
+                setNewInstructor({ ...newInstructor, avatar: e.target?.result })
             }
             reader.readAsDataURL(file)
         }
     }
 
     // Image upload handler for EDIT INSTRUCTOR dialog
-    const handleEditInstructorImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleEditInstructorImageUpload = (e) => {
         const file = e.target.files?.[0]
         if (file) {
             const reader = new FileReader()
             reader.onload = (e) => {
-                setFormData({ ...formData, avatar: e.target?.result as string })
+                setFormData({ ...formData, avatar: e.target?.result })
             }
             reader.readAsDataURL(file)
         }
@@ -258,7 +253,7 @@ export default function Instructors() {
     // Remove image for ADD NEW INSTRUCTOR
     const handleAddInstructorImageRemove = () => {
         setNewInstructor({ ...newInstructor, avatar: "" });
-        const imageInput = document.getElementById("instructor-image-upload-add") as HTMLInputElement;
+        const imageInput = document.getElementById("instructor-image-upload-add");
         if (imageInput) {
             imageInput.value = "";
         }
@@ -267,7 +262,7 @@ export default function Instructors() {
     // Remove image for EDIT INSTRUCTOR
     const handleEditInstructorImageRemove = () => {
         setFormData({ ...formData, avatar: "" });
-        const imageInput = document.getElementById("instructor-image-upload-edit") as HTMLInputElement;
+        const imageInput = document.getElementById("instructor-image-upload-edit");
         if (imageInput) {
             imageInput.value = "";
         }
@@ -354,7 +349,7 @@ export default function Instructors() {
                                     />
                                     <label
                                         htmlFor="instructor-image-upload-add"
-                                        className="flex items-center space-x-2 px-4 py-2 border border-gray-300 rounded-md cursor-pointer hover:bg-gray-50"
+                                        className="flex items-center space-x-2 px-4 py-2 border border-gray-300 rounded-md cursor-pointer hover:bg-gray-800"
                                     >
                                         <Upload className="w-4 h-4" />
                                         <span>Upload Image</span>
