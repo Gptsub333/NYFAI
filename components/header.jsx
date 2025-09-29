@@ -32,11 +32,31 @@ export function Header() {
   const [isOpen, setIsOpen] = useState(false)
   const [openDropdown, setOpenDropdown] = useState(null)
   const [mobileDropdown, setMobileDropdown] = useState(null)
+  const [isLoggingOut, setIsLoggingOut] = useState(false)
   const closeTimeout = useRef(null)
-  const { user, logout } = useAuth()
+  const { user, logout, loading } = useAuth()
   const pathname = usePathname()
 
   const isActive = (href) => pathname === href
+
+  const handleLogout = async () => {
+    if (isLoggingOut) return // Prevent double clicks
+
+    setIsLoggingOut(true)
+    try {
+      const result = await logout()
+      if (!result.success) {
+        // You could show a toast notification here
+        console.error("Logout failed:", result.error)
+      }
+      // The auth provider handles redirecting to login page
+    } catch (error) {
+      console.error("Logout error:", error)
+    } finally {
+      setIsLoggingOut(false)
+      setIsOpen(false) // Close mobile menu if open
+    }
+  }
 
   const dropdowns = {
     Academy: [
@@ -67,6 +87,21 @@ export function Header() {
     setMobileDropdown(mobileDropdown === name ? null : name)
   }
 
+  // Show loading state if auth is still loading
+  if (loading) {
+    return (
+      <header className="fixed top-0 w-full z-50 backdrop-blur-xl bg-[radial-gradient(circle_at_left,rgba(164,153,200,0.25),transparent_70%)] bg-[#1069a1] shadow-sm border-b border-border">
+        <div className="container mx-auto max-w-[1400px] px-4 sm:px-6 lg:px-8 mt-2">
+          <div className="flex items-center h-20 mb-[-10] lg:-mt-1 gap-6">
+            <Link href="/" className="flex items-center group">
+              <img src="/AI_LOGO 2.png" alt="AI Text" className="h-16 sm:h-20 lg:h-24 max-h-24 object-contain" />
+            </Link>
+          </div>
+        </div>
+      </header>
+    )
+  }
+
   return (
     <header className="fixed top-0 w-full z-50 backdrop-blur-xl bg-[radial-gradient(circle_at_left,rgba(164,153,200,0.25),transparent_70%)] bg-[#1069a1] shadow-sm border-b border-border">
       <div className="container mx-auto max-w-[1400px] px-4 sm:px-6 lg:px-8 mt-2">
@@ -85,6 +120,7 @@ export function Header() {
                   variant="ghost"
                   size="sm"
                   className="flex items-center space-x-2 text-white hover:text-white/80 hover:bg-white/10 transition-colors px-3 py-1 rounded-full"
+                  disabled={isLoggingOut}
                 >
                   {user ? (
                     <>
@@ -114,18 +150,15 @@ export function Header() {
                       </div>
                     </DropdownMenuLabel>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem className="text-gray-700 hover:bg-[#1a729c]/10 focus:bg-[#1a729c]/10">
-                      <UserCircle className="w-4 h-4 mr-2" />
-                      Profile
-                    </DropdownMenuItem>
-                    <DropdownMenuItem className="text-gray-700 hover:bg-[#1a729c]/10 focus:bg-[#1a729c]/10">
-                      <Settings className="w-4 h-4 mr-2" />
-                      Settings
-                    </DropdownMenuItem>
+
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={logout} className="text-red-600 hover:bg-red-50 focus:bg-red-50">
+                    <DropdownMenuItem
+                      onClick={handleLogout}
+                      className="text-red-600 hover:bg-red-50 focus:bg-red-50"
+                      disabled={isLoggingOut}
+                    >
                       <LogOut className="w-4 h-4 mr-2" />
-                      Logout
+                      {isLoggingOut ? "Logging out..." : "Logout"}
                     </DropdownMenuItem>
                   </>
                 ) : (
@@ -142,13 +175,7 @@ export function Header() {
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
-                      <Link
-                        href="/auth/signup"
-                        className="text-[#1a729c] hover:bg-[#1a729c]/10 focus:bg-[#1a729c]/10 font-medium cursor-pointer"
-                      >
-                        <UserCircle className="w-4 h-4 mr-2" />
-                        Sign Up
-                      </Link>
+
                     </DropdownMenuItem>
                   </>
                 )}
@@ -338,22 +365,16 @@ export function Header() {
                           </div>
                         </div>
                         <div className="space-y-2">
-                          <Button variant="ghost" size="sm" className="w-full justify-start">
-                            <UserCircle className="w-4 h-4 mr-2" />
-                            Profile
-                          </Button>
-                          <Button variant="ghost" size="sm" className="w-full justify-start">
-                            <Settings className="w-4 h-4 mr-2" />
-                            Settings
-                          </Button>
+
                           <Button
-                            onClick={logout}
+                            onClick={handleLogout}
                             variant="ghost"
                             size="sm"
                             className="w-full justify-start text-red-600 hover:bg-red-50"
+                            disabled={isLoggingOut}
                           >
                             <LogOut className="w-4 h-4 mr-2" />
-                            Logout
+                            {isLoggingOut ? "Logging out..." : "Logout"}
                           </Button>
                         </div>
                       </>
@@ -364,11 +385,7 @@ export function Header() {
                             Login
                           </Button>
                         </Link>
-                        <Link href="/auth/signup" onClick={() => setIsOpen(false)}>
-                          <Button size="sm" className="w-full bg-[#1a729c] hover:bg-[#165881] text-white">
-                            Sign Up
-                          </Button>
-                        </Link>
+
                       </div>
                     )}
                   </div>

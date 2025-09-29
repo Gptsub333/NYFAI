@@ -439,12 +439,12 @@ export default function UpcomingEvents() {
                     </div>
 
                     <div>
-                      <Label htmlFor="honor">Honor of the meet *</Label>
+                      <Label htmlFor="honor">Host *</Label>
                       <Input
                         id="honor"
                         value={formData.honor}
                         onChange={(e) => handleInputChange("honor", e.target.value)}
-                        placeholder="Enter honor of the meet"
+                        placeholder="Enter Host"
                         required
                       />
                     </div>

@@ -404,12 +404,12 @@ export default function Past() {
                     </div>
 
                     <div>
-                      <Label htmlFor="honors">Honor of the meet *</Label>
+                      <Label htmlFor="honors">Host *</Label>
                       <Input
                         id="honors"
                         value={formData.honors}
                         onChange={(e) => handleInputChange("honors", e.target.value)}
-                        placeholder="Enter honor of the meet"
+                        placeholder="Enter Host"
                         required
                       />
                     </div>

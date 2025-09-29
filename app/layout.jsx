@@ -12,7 +12,7 @@ const inter = Inter({ subsets: ["latin"] })
 export const metadata = {
   title: "Not Your Father's A.I.",
   description: "Contemporary digital marketing and AI-focused platform for the modern era",
-  generator: "HolboxAI (Dev Joshi)",
+  generator: "HolboxAI (Shivam Pandey)",
   icons: {
     icon: "/ai_logo.png",
     shortcut: "/ai_logo.png",

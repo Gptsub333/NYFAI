@@ -136,7 +136,7 @@ export default function EventsPage() {
           </section>
 
           {/* ========= Optional: Keep your calendar teaser ========= */}
-          <section>
+          {/* <section>
             <Card>
               <CardContent className="p-8">
                 <div className="text-center">
@@ -152,7 +152,7 @@ export default function EventsPage() {
                 </div>
               </CardContent>
             </Card>
-          </section>
+          </section> */}
         </div>
       </div>
     </div>

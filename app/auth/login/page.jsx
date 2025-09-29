@@ -25,13 +25,22 @@ export default function LoginPage() {
         setError("")
         setIsLoading(true)
 
-        const result = await login(email, password)
-        if (result.success) {
-            router.push("/")
-        } else {
-            setError(result.error)
+        try {
+            const result = await login(email, password)
+            console.log("Login result:", result)
+
+            if (result.success) {
+                console.log("Redirecting to home...")
+                router.replace("/")
+            } else {
+                setError(result.error || "Login failed. Please try again.")
+            }
+        } catch (err) {
+            console.error("Login error:", err)
+            setError("An unexpected error occurred. Please try again.")
+        } finally {
+            setIsLoading(false)
         }
-        setIsLoading(false)
     }
 
     return (
@@ -67,15 +76,16 @@ export default function LoginPage() {
                                     Email Address
                                 </Label>
                                 <div className="relative">
-                                    <Mail className="absolute left-3 top-4  h-4 w-4 text-gray-400" />
+                                    <Mail className="absolute left-3 top-4 h-4 w-4 text-gray-400" />
                                     <Input
                                         id="email"
                                         type="email"
                                         placeholder="Enter your email"
                                         value={email}
                                         onChange={(e) => setEmail(e.target.value)}
-                                        className="pl-10 h-12 bg-white border-gray-200 focus:border-[#1a729c] focus:ring-[#1a729c]"
+                                        className="pl-10 h-12 bg-white text-gray-900 border-gray-200 focus:border-[#1a729c] focus:ring-[#1a729c]"
                                         required
+                                        disabled={isLoading}
                                     />
                                 </div>
                             </div>
@@ -92,13 +102,15 @@ export default function LoginPage() {
                                         placeholder="Enter your password"
                                         value={password}
                                         onChange={(e) => setPassword(e.target.value)}
-                                        className="pl-10 pr-10 h-12 bg-white border-gray-200 focus:border-[#1a729c] focus:ring-[#1a729c]"
+                                        className="pl-10 pr-10 h-12 bg-white text-gray-900 border-gray-200 focus:border-[#1a729c] focus:ring-[#1a729c]"
                                         required
+                                        disabled={isLoading}
                                     />
                                     <button
                                         type="button"
                                         onClick={() => setShowPassword(!showPassword)}
-                                        className="absolute right-3 top-3 text-gray-400 hover:text-gray-600"
+                                        className="absolute right-3 top-3 text-gray-400 hover:text-gray-600 transition-colors"
+                                        disabled={isLoading}
                                     >
                                         {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                                     </button>
@@ -111,12 +123,16 @@ export default function LoginPage() {
                                         id="remember"
                                         type="checkbox"
                                         className="rounded bg-white border-gray-300 text-[#1a729c] focus:ring-[#1a729c]"
+                                        disabled={isLoading}
                                     />
                                     <Label htmlFor="remember" className="text-sm text-gray-600">
                                         Remember me
                                     </Label>
                                 </div>
-                                <Link href="/auth/forgot-password" className="text-sm text-[#1a729c] hover:text-[#165881] font-medium">
+                                <Link
+                                    href="/auth/forgot-password"
+                                    className="text-sm text-[#1a729c] hover:text-[#165881] font-medium transition-colors"
+                                >
                                     Forgot password?
                                 </Link>
                             </div>
@@ -124,7 +140,7 @@ export default function LoginPage() {
                             <Button
                                 type="submit"
                                 disabled={isLoading}
-                                className="w-full h-12 bg-[#1a729c] hover:bg-[#165881] text-white font-semibold text-base transition-colors"
+                                className="w-full h-12 bg-[#1a729c] hover:bg-[#165881] text-white font-semibold text-base transition-colors disabled:opacity-50"
                             >
                                 {isLoading ? "Signing In..." : "Sign In"}
                             </Button>
@@ -133,24 +149,22 @@ export default function LoginPage() {
                         <div className="mt-6 text-center">
                             <p className="text-gray-600">
                                 Don't have an account?{" "}
-                                <Link href="/auth/signup" className="text-[#1a729c] hover:text-[#165881] font-semibold">
+                                <Link
+                                    href="/auth/signup"
+                                    className="text-[#1a729c] hover:text-[#165881] font-semibold transition-colors"
+                                >
                                     Sign up
                                 </Link>
                             </p>
                         </div>
 
-                        {/* Demo Credentials */}
-                        <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
-                            <p className="text-xs text-blue-700 font-medium mb-1">Demo Credentials:</p>
-                            <p className="text-xs text-blue-600">Email: demo@gmail.com</p>
-                            <p className="text-xs text-blue-600">Password: demo</p>
-                        </div>
+
                     </CardContent>
                 </Card>
 
                 {/* Footer */}
                 <div className="text-center mt-8">
-                    <p className="text-white/60 text-sm">© 2025 Not Your Father's A.I. All rights reserved.</p>
+                    <p className="text-white/80 text-sm">© 2025 Not Your Father's A.I. All rights reserved.</p>
                 </div>
             </div>
         </div>
