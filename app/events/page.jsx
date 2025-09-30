@@ -71,67 +71,6 @@ export default function EventsPage() {
                 </div>
               </CardHeader>
 
-              <CardContent>
-                {/* Compact preview cards */}
-                <div className="grid sm:grid-cols-2 gap-6">
-                  {/* Past event preview card */}
-                  <article className="group relative overflow-hidden rounded-2xl ring-1 ring-border/60 bg-card/60 hover:bg-card transition-colors">
-                    <div
-                      className="relative aspect-[16/9] bg-cover bg-center"
-                      style={{ backgroundImage: `url(${pastPreview.image})` }}
-                    />
-                    <div className="p-4">
-                      <div className="flex items-center justify-between text-xs text-muted-foreground mb-1">
-                        <span className="inline-flex items-center gap-1">
-                          <Calendar className="h-3.5 w-3.5" />
-                          {pastPreview.date}
-                        </span>
-                        <span className="inline-flex items-center gap-1">
-                          <Star className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400" />
-                          {pastPreview.rating}
-                        </span>
-                      </div>
-                      <h3 className="font-semibold leading-snug">{pastPreview.title}</h3>
-                      <div className="mt-2 flex items-center justify-between text-xs text-muted-foreground">
-                        <span className="inline-flex items-center gap-1">
-                          <Users className="h-3.5 w-3.5" />
-                          {pastPreview.attendees.toLocaleString()} attended
-                        </span>
-                        <Link href="/events/past">
-                          <Button size="sm" variant="secondary">
-                            Recap
-                          </Button>
-                        </Link>
-                      </div>
-                    </div>
-                  </article>
-
-                  {/* A second lightweight placeholder preview */}
-                  <article className="relative overflow-hidden rounded-2xl ring-1 ring-border/60 bg-card/60 p-4">
-                    <div className="text-xs text-muted-foreground mb-1 inline-flex items-center gap-1">
-                      <Calendar className="h-3.5 w-3.5" /> November 2024
-                    </div>
-                    <h3 className="font-semibold leading-snug">AI Tools Workshop Series</h3>
-                    <div className="mt-2 flex items-center justify-between text-xs text-muted-foreground">
-                      <span className="inline-flex items-center gap-1">
-                        <Users className="h-3.5 w-3.5" />
-                        850 attended
-                      </span>
-                      <span className="inline-flex items-center gap-1">
-                        <Star className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400" />
-                        4.8
-                      </span>
-                    </div>
-                    <div className="mt-4">
-                      <Link href="/events/past">
-                        <Button size="sm" variant="outline" className="w-full bg-transparent bg-[#1a729c]">
-                          View recordings
-                        </Button>
-                      </Link>
-                    </div>
-                  </article>
-                </div>
-              </CardContent>
             </div>
           </section>
 

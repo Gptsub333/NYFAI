@@ -556,7 +556,7 @@ export default function Past() {
                       </p>
 
                       <p className="flex items-center gap-2">
-                        <span className="text-white">Honor of the meet:</span> {event.honors}
+                        <span className="text-white">Host:</span> {event.honors}
                       </p>
                     </div>
 

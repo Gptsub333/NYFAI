@@ -26,14 +26,32 @@ export default function LoginPage() {
         setIsLoading(true)
 
         try {
-            const result = await login(email, password)
-            console.log("Login result:", result)
+            // Direct API call instead of relying on auth provider
+            const res = await fetch("/api/auth/login", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ email, password }),
+            })
 
-            if (result.success) {
-                console.log("Redirecting to home...")
-                router.replace("/")
+            const data = await res.json()
+            console.log("Login response:", data)
+
+            if (res.ok && data.success) {
+                console.log("Login successful, redirecting...")
+
+                // Call the auth provider login if it exists (to update context)
+                if (login) {
+                    await login(email, password)
+                }
+
+                // Force redirect using window.location for more reliable navigation
+                window.location.href = "/"
+
+                // Alternative: Use router.push with refresh
+                // router.push("/")
+                // router.refresh()
             } else {
-                setError(result.error || "Login failed. Please try again.")
+                setError(data.error || "Login failed. Please check your credentials.")
             }
         } catch (err) {
             console.error("Login error:", err)
@@ -118,22 +136,11 @@ export default function LoginPage() {
                             </div>
 
                             <div className="flex items-center justify-between">
-                                <div className="flex items-center space-x-2">
-                                    <input
-                                        id="remember"
-                                        type="checkbox"
-                                        className="rounded bg-white border-gray-300 text-[#1a729c] focus:ring-[#1a729c]"
-                                        disabled={isLoading}
-                                    />
-                                    <Label htmlFor="remember" className="text-sm text-gray-600">
-                                        Remember me
-                                    </Label>
-                                </div>
                                 <Link
-                                    href="/auth/forgot-password"
+                                    href="/auth/change-password"
                                     className="text-sm text-[#1a729c] hover:text-[#165881] font-medium transition-colors"
                                 >
-                                    Forgot password?
+                                    Change password?
                                 </Link>
                             </div>
 
@@ -145,27 +152,10 @@ export default function LoginPage() {
                                 {isLoading ? "Signing In..." : "Sign In"}
                             </Button>
                         </form>
-
-                        <div className="mt-6 text-center">
-                            <p className="text-gray-600">
-                                Don't have an account?{" "}
-                                <Link
-                                    href="/auth/signup"
-                                    className="text-[#1a729c] hover:text-[#165881] font-semibold transition-colors"
-                                >
-                                    Sign up
-                                </Link>
-                            </p>
-                        </div>
-
-
                     </CardContent>
                 </Card>
 
-                {/* Footer */}
-                <div className="text-center mt-8">
-                    <p className="text-white/80 text-sm">© 2025 Not Your Father's A.I. All rights reserved.</p>
-                </div>
+
             </div>
         </div>
     )

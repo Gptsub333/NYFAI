@@ -46,17 +46,25 @@ export default function HomePage() {
     setError(null)
 
     try {
-      const beehiivPromise = fetch("/api/beehiiv-subscribe", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: formData.email }),
-      });
+      const beehiivPromise = fetch(
+        "/api/beehiiv-subscribe",
+        // "http://localhost:3001/api/beehiiv-subscribe",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: formData.email }),
+        },
+      )
 
-      const airtablePromise = fetch("/api/airtable-subscribe", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: formData.name, email: formData.email }),
-      });
+      const airtablePromise = fetch(
+        "/api/airtable-subscribe",
+        // "http://localhost:3001/api/airtable-subscribe",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name: formData.name, email: formData.email, date: new Date().toISOString() }),
+        },
+      )
 
       const [beehiivRes, airtableRes] = await Promise.all([beehiivPromise, airtablePromise]);
 
@@ -151,7 +159,7 @@ export default function HomePage() {
                     {/* Button */}
                     <Button
                       type="submit"
-                      className="w-full text-sm py-3 rounded-xl bg-gradient-to-r from-[#1a729c] to-[#1a729c] hover:from-[#1a729c] hover:to-[#1a729c] transition-all shadow-md hover:shadow-lg text-white"
+                      className="w-full text-sm py-3 rounded-xl bg-gradient-to-r from-[#165881] to-[#165881] hover:from-[#165881] hover:to-[#165881] transition-all shadow-md hover:shadow-lg text-white"
                       disabled={isLoading}
                     >
                       {isLoading ? "Subscribing..." : "✨ Subscribe"}
@@ -230,7 +238,7 @@ export default function HomePage() {
                     breakthrough, you&apos;re in good company.
                   </p>
                   <Link href="/community">
-                    <Button size="lg" className="bg-[#1a729c]">
+                    <Button size="lg" className="bg-[#165881]">
                       Join the Conversation
                     </Button>
                   </Link>
@@ -261,7 +269,7 @@ export default function HomePage() {
                     is designed with impact in mind.
                   </p>
                   <Link href="/solutions">
-                    <Button size="lg" className="bg-[#1a729c]">
+                    <Button size="lg" className="bg-[#165881]">
                       Explore what we offer
                     </Button>
                   </Link>
@@ -316,7 +324,7 @@ export default function HomePage() {
                     Whether you&apos;re a curious learner or a seasoned pro, these reads will fuel your growth.
                   </p>
                   <Link href="/media/Article">
-                    <Button size="lg" className="bg-[#1a729c]">
+                    <Button size="lg" className="bg-[#165881]">
                       Read Articles
                     </Button>
                   </Link>
@@ -351,7 +359,7 @@ export default function HomePage() {
                     your growth.
                   </p>
                   <Link href="/events/upcoming">
-                    <Button size="lg" className="bg-[#1a729c]">
+                    <Button size="lg" className="bg-[#165881]">
                       Explore Upcoming Events
                     </Button>
                   </Link>

@@ -24,9 +24,10 @@ export default function NewsletterModule() {
     setIsLoading(true)
     setError(null)
 
+
     try {
       const beehiivPromise = fetch(
-        "https://nyfai-api.vercel.app/api/beehiiv-subscribe",
+        "/api/beehiiv-subscribe",
         // "http://localhost:3001/api/beehiiv-subscribe",
         {
           method: "POST",
@@ -36,7 +37,7 @@ export default function NewsletterModule() {
       )
 
       const airtablePromise = fetch(
-        "https://nyfai-api.vercel.app/api/airtable-subscribe",
+        "/api/airtable-subscribe",
         // "http://localhost:3001/api/airtable-subscribe",
         {
           method: "POST",
@@ -92,7 +93,7 @@ export default function NewsletterModule() {
           {!isSubmitted ? (
             <>
               {/* Left Content */}
-              <div className="md:w-1/2 p-8 bg-gradient-to-br from-[#1a729c]/50 via-white to-[#1a729c]/50 dark:from-[#1a729c]/30 dark:via-muted dark:to-[#1a729c]/30">
+              <div className="md:w-1/2 p-8 bg-gradient-to-br from-[#165881]/50 via-white to-[#165881]/50 dark:from-[#1a729c]/30 dark:via-muted dark:to-[#1a729c]/30">
                 <h2 className="text-2xl font-bold mb-4">
                   AI Insight <span className="text-[#1a729c]">Subscription</span>
                 </h2>
@@ -135,7 +136,7 @@ export default function NewsletterModule() {
                   </div>
                   <Button
                     type="submit"
-                    className="w-full bg-gradient-to-r from-[#1a729c] to-[#1a729c] hover:from-[#1a729c] hover:to-[#1a729c] transition-all shadow-md hover:shadow-lg text-white"
+                    className="w-full bg-gradient-to-r from-[#165881] to-[#165881] hover:from-[#1a729c] hover:to-[#1a729c] transition-all shadow-md hover:shadow-lg text-white"
                     disabled={isLoading}
                   >
                     {isLoading ? "Subscribing..." : "Subscribe"}

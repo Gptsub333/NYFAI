@@ -19,7 +19,7 @@ export async function POST(req) {
             )
         }
 
-        // Rate limiting could be added here
+        console.log("Login attempt for:", email)
 
         // Safer query - escape the email properly
         const records = await base("Admin")
@@ -30,6 +30,7 @@ export async function POST(req) {
             .firstPage()
 
         if (!records.length) {
+            console.log("User not found")
             // Don't reveal if email exists or not
             return NextResponse.json(
                 { error: "Invalid credentials" },
@@ -38,13 +39,32 @@ export async function POST(req) {
         }
 
         const admin = records[0].fields
+        console.log("User found, validating password")
 
-        // For security, passwords should be hashed
-        // If using plain text (not recommended), at least use timing-safe comparison
-        const isValid = password === admin.Password
+        // Handle both hashed and plain text passwords
+        let isValid = false
 
-        // Better approach would be:
-        // const isValid = await bcrypt.compare(password, admin.Password)
+        if (admin.Password.startsWith('$2')) {
+            // Password is hashed with bcrypt
+            console.log("Comparing hashed password")
+            isValid = await bcrypt.compare(password, admin.Password)
+        } else {
+            // Password is plain text (legacy support)
+            console.log("Comparing plain text password")
+            isValid = password === admin.Password
+
+            // Optional: Auto-upgrade to hashed password on successful login
+            if (isValid) {
+                console.log("Upgrading plain text password to hashed")
+                const hashedPassword = await bcrypt.hash(password, 10)
+                await base("Admin").update(records[0].id, {
+                    Password: hashedPassword
+                })
+                console.log("Password upgraded successfully")
+            }
+        }
+
+        console.log("Password validation result:", isValid)
 
         if (!isValid) {
             return NextResponse.json(
@@ -58,13 +78,12 @@ export async function POST(req) {
             {
                 email: admin.Mail,
                 id: records[0].id,
-                // Don't include sensitive data in JWT
             },
             process.env.JWT_SECRET,
             {
                 expiresIn: "24h",
-                issuer: "your-app-name",
-                audience: "your-app-users"
+                issuer: "bobcat-academy",
+                audience: "bobcat-users"
             }
         )
 
@@ -72,7 +91,6 @@ export async function POST(req) {
             success: true,
             user: {
                 email: admin.Mail,
-                // Include any non-sensitive user data needed by frontend
             }
         })
 
@@ -85,10 +103,12 @@ export async function POST(req) {
             path: "/"
         })
 
+        console.log("Login successful for:", email)
         return response
 
     } catch (error) {
         console.error("Login error:", error)
+        console.error("Error details:", error.message)
         return NextResponse.json(
             { error: "Internal server error" },
             { status: 500 }

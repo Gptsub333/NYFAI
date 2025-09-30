@@ -80,51 +80,7 @@ export default function ResourcesPage() {
             </div>
           </section>
 
-          {/* ===== Tools & Templates (Preview) ===== */}
-          <section className="relative">
-            <div className="pointer-events-none absolute inset-0 -z-10 translate-x-2 translate-y-2 rounded-3xl bg-primary/5" />
-            <div className="pointer-events-none absolute inset-0 -z-20 rounded-3xl bg-gradient-to-r from-emerald-500/10 to-teal-500/10 blur-sm" />
 
-            <div className="rounded-3xl ring-1 ring-border/60 bg-background/40 backdrop-blur shadow-[0_10px_30px_-10px_rgba(0,0,0,0.45)] overflow-hidden">
-              <CardHeader className="text-center">
-                <CardTitle className="text-3xl">Tools & Templates</CardTitle>
-                <CardDescription>
-                  Reusable docs, checklists, and small utilities.
-                </CardDescription>
-                <div className="mt-3">
-                  <Badge variant="secondary" className="text-xs">
-                    Coming soon
-                  </Badge>
-                </div>
-                <div className="mt-4">
-                  <Link
-                    href="/resources/toolsTemplate"
-                    className="inline-block"
-                  >
-                    <Button size="sm" className="bg-[#1a729c]">Browse Tools & Templates</Button>
-                  </Link>
-                </div>
-              </CardHeader>
-
-              <CardContent>
-                <article className="rounded-2xl ring-1 ring-border/60 p-6 bg-card/60">
-                  <div className="flex items-start gap-4">
-                    <div className="mt-1 shrink-0">
-                      <Wrench className="h-6 w-6" />
-                    </div>
-                    <div className="space-y-2 text-sm text-muted-foreground">
-                      <p>
-                        One-pagers, SOPs, automation blueprints, prompt
-                        skeletons, and KPI trackers.
-                      </p>
-                      <p>Copy to your workspace and adapt in minutes.</p>
-                      <p>Versioned updates as the ecosystem evolves.</p>
-                    </div>
-                  </div>
-                </article>
-              </CardContent>
-            </div>
-          </section>
 
           {/* ===== AI Reviews (Preview) ===== */}
           <section className="relative">

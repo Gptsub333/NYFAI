@@ -566,7 +566,7 @@ export default function UpcomingEvents() {
                       </p>
 
                       <p className="flex items-center gap-2">
-                        <span className="text-white">Honor of the meet:</span> {event.honor}
+                        <span className="text-white">Host:</span> {event.honor}
                       </p>
                     </div>
 

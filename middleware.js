@@ -6,16 +6,20 @@ export default async function middleware(req) {
     const token = req.cookies.get("token")?.value
     const url = req.nextUrl
 
-    // Public paths (accessible without login)
     const publicPaths = [
         "/auth/login",
         "/auth/signup",
-        "/auth/forgot-password",
+        "/auth/change-password",
         "/auth/reset-password",
         "/api/auth",
-        "/public",
     ]
 
+    // Check for static assets (images, fonts, etc.)
+    const isStaticAsset = /\.(jpg|jpeg|png|gif|svg|webp|ico|woff|woff2|ttf|eot)$/i.test(url.pathname)
+
+    if (publicPaths.some(path => url.pathname.startsWith(path)) || isStaticAsset) {
+        return NextResponse.next()
+    }
     if (publicPaths.some(path => url.pathname.startsWith(path))) {
         return NextResponse.next()
     }

@@ -341,7 +341,7 @@ export default function OnlineCourse() {
             <h2 className="text-2xl font-bold">Professional Learning Paths</h2>
             <Dialog open={isAddCourseOpen} onOpenChange={setIsAddCourseOpen}>
               <DialogTrigger asChild>
-                <Button className="bg-[#1a729c] hover:bg-[#1a729c]/90">
+                <Button className="bg-[#165881] hover:bg-[#1a729c]/90">
                   <Plus className="w-4 h-4 mr-2" />
                   Add New Course
                 </Button>
@@ -481,7 +481,7 @@ export default function OnlineCourse() {
                     </Button>
                     <Button
                       onClick={handleAddCourse}
-                      className="bg-[#1a729c] hover:bg-[#1a729c]/90"
+                      className="bg-[#1a729c] hover:bg-[#165881]/90"
                       disabled={loading}  // Disable the button when loading
                     >
                       {loading ? (
@@ -636,7 +636,7 @@ export default function OnlineCourse() {
                     </Button>
                     <Button
                       type="submit"
-                      className="bg-[#1a729c] hover:bg-[#145a7a] space-x-4"
+                      className="bg-[#1a729c] hover:bg-[#165881] space-x-4"
                       disabled={loading}
                     >
                       {loading ? <span className="loader"></span> : "Save Changes"}

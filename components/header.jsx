@@ -77,7 +77,7 @@ export function Header() {
     ],
     Resources: [
       { label: "Prompt Library", href: "/resources/promptLibrary" },
-      { label: "Tools & Template", href: "/resources/toolsTemplate" },
+      // { label: "Tools & Template", href: "/resources/toolsTemplate" },
       { label: "AI Reviews", href: "/resources/aiReviews" },
     ],
     Marketplace: [{ label: "AI agent Tools", href: "http://51.20.109.190" }],
@@ -90,7 +90,7 @@ export function Header() {
   // Show loading state if auth is still loading
   if (loading) {
     return (
-      <header className="fixed top-0 w-full z-50 backdrop-blur-xl bg-[radial-gradient(circle_at_left,rgba(164,153,200,0.25),transparent_70%)] bg-[#1069a1] shadow-sm border-b border-border">
+      <header className="fixed top-0 w-full z-50 backdrop-blur-xl bg-[radial-gradient(circle_at_left,rgba(164,153,200,0.25),transparent_70%)] bg-[#165881] shadow-sm border-b border-border">
         <div className="container mx-auto max-w-[1400px] px-4 sm:px-6 lg:px-8 mt-2">
           <div className="flex items-center h-20 mb-[-10] lg:-mt-1 gap-6">
             <Link href="/" className="flex items-center group">
@@ -103,7 +103,7 @@ export function Header() {
   }
 
   return (
-    <header className="fixed top-0 w-full z-50 backdrop-blur-xl bg-[radial-gradient(circle_at_left,rgba(164,153,200,0.25),transparent_70%)] bg-[#1069a1] shadow-sm border-b border-border">
+    <header className="fixed top-0 w-full z-50 backdrop-blur-xl bg-[radial-gradient(circle_at_left,rgba(164,153,200,0.25),transparent_70%)] bg-[#165881] shadow-sm border-b border-border">
       <div className="container mx-auto max-w-[1400px] px-4 sm:px-6 lg:px-8 mt-2">
         {/* Top Row - Hidden on mobile */}
         <div className="hidden lg:flex justify-end items-center h-8 text-xs">
