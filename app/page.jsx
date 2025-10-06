@@ -7,6 +7,7 @@ import { CheckCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Cormorant_Garamond } from "next/font/google"
+import { SubscribePopup } from "@/components/subscribe-popup"
 
 const cormorant = Cormorant_Garamond({
   subsets: ["latin"],
@@ -46,62 +47,57 @@ export default function HomePage() {
     setError(null)
 
     try {
-      const beehiivPromise = fetch(
-        "/api/beehiiv-subscribe",
-        // "http://localhost:3001/api/beehiiv-subscribe",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email: formData.email }),
-        },
-      )
+      const beehiivPromise = fetch("/api/beehiiv-subscribe", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: formData.email }),
+      })
 
-      const airtablePromise = fetch(
-        "/api/airtable-subscribe",
-        // "http://localhost:3001/api/airtable-subscribe",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ name: formData.name, email: formData.email, date: new Date().toISOString() }),
-        },
-      )
+      const airtablePromise = fetch("/api/airtable-subscribe", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: formData.name, email: formData.email }),
+      })
 
-      const [beehiivRes, airtableRes] = await Promise.all([beehiivPromise, airtablePromise]);
+      const [beehiivRes, airtableRes] = await Promise.all([beehiivPromise, airtablePromise])
 
       if (!beehiivRes.ok || !airtableRes.ok) {
-        const beehiivError = await beehiivRes.text();
-        const airtableError = await airtableRes.text();
+        const beehiivError = await beehiivRes.text()
+        const airtableError = await airtableRes.text()
         throw new Error(
-          `Beehiiv error (${beehiivRes.status}): ${beehiivError}\nAirtable error (${airtableRes.status}): ${airtableError}`
-        );
+          `Beehiiv error (${beehiivRes.status}): ${beehiivError}\nAirtable error (${airtableRes.status}): ${airtableError}`,
+        )
       }
 
-      setIsSubmitted(true);
-      setIsLoading(false);
+      setIsSubmitted(true)
+      setIsLoading(false)
 
       setTimeout(() => {
-        setIsSubmitted(false);
-        setFormData({ name: "", email: "" });
-      }, 3000);
+        setIsSubmitted(false)
+        setFormData({ name: "", email: "" })
+      }, 3000)
     } catch (err) {
-      console.error("Subscription Error:", err);
-      let message = "Something went wrong. Please try again.";
-      if (err instanceof Error) message = err.message;
-      else if (typeof err === "string") message = err;
+      console.error("Subscription Error:", err)
+      let message = "Something went wrong. Please try again."
+      if (err instanceof Error) message = err.message
+      else if (typeof err === "string") message = err
       else if (typeof err === "object" && err !== null) {
         try {
-          message = JSON.stringify(err);
+          message = JSON.stringify(err)
         } catch {
-          message = "Unknown error.";
+          message = "Unknown error."
         }
       }
-      setError(message);
-      setIsLoading(false);
+      setError(message)
+      setIsLoading(false)
     }
   }
 
   return (
     <div className="min-h-screen">
+      {/* Subscribe Popup */}
+      <SubscribePopup />
+
       {/* ================= HERO ================= */}
       <section
         ref={heroRef}
@@ -159,7 +155,7 @@ export default function HomePage() {
                     {/* Button */}
                     <Button
                       type="submit"
-                      className="w-full text-sm py-3 rounded-xl bg-gradient-to-r from-[#165881] to-[#165881] hover:from-[#165881] hover:to-[#165881] transition-all shadow-md hover:shadow-lg text-white"
+                      className="w-full text-sm py-3 rounded-xl bg-gradient-to-r from-[#1a729c] to-[#1a729c] hover:from-[#1a729c] hover:to-[#1a729c] transition-all shadow-md hover:shadow-lg text-white"
                       disabled={isLoading}
                     >
                       {isLoading ? "Subscribing..." : "✨ Subscribe"}
@@ -238,7 +234,7 @@ export default function HomePage() {
                     breakthrough, you&apos;re in good company.
                   </p>
                   <Link href="/community">
-                    <Button size="lg" className="bg-[#165881]">
+                    <Button size="lg" className="bg-[#1a729c]">
                       Join the Conversation
                     </Button>
                   </Link>
@@ -269,7 +265,7 @@ export default function HomePage() {
                     is designed with impact in mind.
                   </p>
                   <Link href="/solutions">
-                    <Button size="lg" className="bg-[#165881]">
+                    <Button size="lg" className="bg-[#1a729c]">
                       Explore what we offer
                     </Button>
                   </Link>
@@ -324,7 +320,7 @@ export default function HomePage() {
                     Whether you&apos;re a curious learner or a seasoned pro, these reads will fuel your growth.
                   </p>
                   <Link href="/media/Article">
-                    <Button size="lg" className="bg-[#165881]">
+                    <Button size="lg" className="bg-[#1a729c]">
                       Read Articles
                     </Button>
                   </Link>
@@ -359,7 +355,7 @@ export default function HomePage() {
                     your growth.
                   </p>
                   <Link href="/events/upcoming">
-                    <Button size="lg" className="bg-[#165881]">
+                    <Button size="lg" className="bg-[#1a729c]">
                       Explore Upcoming Events
                     </Button>
                   </Link>

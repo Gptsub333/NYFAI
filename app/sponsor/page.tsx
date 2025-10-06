@@ -3,6 +3,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Star, Users, TrendingUp, Award, CheckCircle, ArrowRight } from "lucide-react"
 import Link from "next/link";
+import SuccessStory from "@/components/success-stories";
 
 export default function SponsorPage() {
   return (
@@ -69,8 +70,8 @@ export default function SponsorPage() {
                       sponsor.tier === "Platinum"
                         ? "default"
                         : sponsor.tier === "Gold"
-                        ? "secondary"
-                        : "outline"
+                          ? "secondary"
+                          : "outline"
                     }
                   >
                     {sponsor.tier} Partner
@@ -136,9 +137,8 @@ export default function SponsorPage() {
             ].map((tier, index) => (
               <Card
                 key={index}
-                className={`relative ${
-                  tier.popular ? "border-2 border-[#1a729c] shadow-lg" : ""
-                }`}
+                className={`relative ${tier.popular ? "border-2 border-[#1a729c] shadow-lg" : ""
+                  }`}
               >
                 {tier.popular && (
                   <Badge className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-[#1a729c]">
@@ -162,9 +162,8 @@ export default function SponsorPage() {
                     ))}
                   </ul>
                   <Button
-                    className={`w-full ${
-                      tier.popular ? "" : "variant-outline"
-                    } bg-[#1a729c] text-white`} 
+                    className={`w-full ${tier.popular ? "" : "variant-outline"
+                      } bg-[#1a729c] text-white`}
                   >
                     Get Started
                   </Button>
@@ -220,7 +219,8 @@ export default function SponsorPage() {
         </div>
 
         {/* Success Stories */}
-        <div className="mb-16">
+        <SuccessStory />
+        {/* <div className="mb-16">
           <h2 className="text-2xl font-bold mb-8 text-center">
             Partner Success Stories
           </h2>
@@ -274,7 +274,7 @@ export default function SponsorPage() {
               </Card>
             ))}
           </div>
-        </div>
+        </div> */}
 
         {/* CTA Section */}
         <Card className="bg-gradient-to-r from-[#1a729c] to-purple-600 text-white border-none">
