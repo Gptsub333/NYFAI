@@ -538,7 +538,7 @@ export default function Articles() {
 
   return (
     <div className="min-h-screen bg-[#010817]">
-      <div className="bg-gradient-to-r from-[#1a729c] to-[#165881] text-white py-20 relative overflow-hidden">
+      <div className="bg-gradient-to-r from-[#165881] to-[#165881] text-white py-20 relative overflow-hidden">
         <div className="absolute inset-0 bg-black/10"></div>
         <div className="max-w-7xl mx-auto px-4 md:px-8 relative z-10">
           <div className="flex items-center justify-between">

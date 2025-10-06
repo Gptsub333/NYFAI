@@ -396,7 +396,7 @@ export default function BlogDetail({ blogId, onBack, onBlogDeleted }) {
 
       {/* Header Section */}
       <div className="bg-[#1a729c] text-white py-16 relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-[#1a729c] to-[#165881]"></div>
+        <div className="absolute inset-0 bg-gradient-to-br from-[#165881] to-[#165881]"></div>
         <div className="relative max-w-7xl mx-auto px-4 md:px-8">
           <div className="flex items-center justify-between mb-8">
             <button
