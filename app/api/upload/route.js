@@ -6,8 +6,8 @@ import { NextResponse } from 'next/server';
 const s3 = new S3Client({
     region: process.env.AWS_REGION,  // e.g., 'us-west-2'
     credentials: {
-        accessKeyId: process.env.AWS_ACCESS_KEY,
-        secretAccessKey: process.env.AWS_SECRET_KEY,
+        accessKeyId: process.env.AWS_ACCESS_KEY_UPLOAD,
+        secretAccessKey: process.env.AWS_SECRET_KEY_UPLOAD,
     },
 });
 
