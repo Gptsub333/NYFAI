@@ -23,7 +23,7 @@ export async function GET() {
       episode: record.fields["Episode Number"],
       description: record.fields.Description,
       link: record.fields["Episode URL"] || "",
-      image: record.fields.Image ? record.fields.Image[0].url : "", // Assuming 'Image' is an attachment field
+      image: record.fields.Image, // Assuming 'Image' is an attachment field
     }))
 
     return NextResponse.json(episodes, { status: 200 })

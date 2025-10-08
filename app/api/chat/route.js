@@ -7,18 +7,18 @@ const MODEL = "gpt-4.1-mini"       // if json_schema isn't supported on your mod
 const TEMPERATURE = 0.3
 
 const PAGES = {
-    community: { label: "Join Community", url: "https://nyfai-i4or71cas-gptaccounts-projects.vercel.app/community" },
-    academy: { label: "Explore Academy", url: "https://nyfai-i4or71cas-gptaccounts-projects.vercel.app/upcoming" },
-    newsletter: { label: "Subscribe to Newsletter", url: "https://nyfai-i4or71cas-gptaccounts-projects.vercel.app/media" },
-    solutions: { label: "View Solutions", url: "https://nyfai-i4or71cas-gptaccounts-projects.vercel.app/solutions" },
-    media: { label: "Watch Media", url: "https://nyfai-i4or71cas-gptaccounts-projects.vercel.app/media" },
-    contact: { label: "Contact Us", url: "https://nyfai-i4or71cas-gptaccounts-projects.vercel.app/Sponsor" },
-    sponsor: { label: "Become a Sponsor", url: "https://nyfai-i4or71cas-gptaccounts-projects.vercel.app/Sponsor" },
-    resources: { label: "Read Resources", url: "https://nyfai-i4or71cas-gptaccounts-projects.vercel.app/resources" },
-    prompt_library: { label: "Open Prompt Library", url: "https://nyfai-i4or71cas-gptaccounts-projects.vercel.app/resources/prompt-library" },
-    ai_reviews: { label: "AI Tool Reviews", url: "https://nyfai-i4or71cas-gptaccounts-projects.vercel.app/resources/aiReviews" },
-    media_articles: { label: "Media Articles", url: "https://nyfai-i4or71cas-gptaccounts-projects.vercel.app/media/Article" },
-    media_episodes: { label: "Course Episodes", url: "https://nyfai-i4or71cas-gptaccounts-projects.vercel.app/media/Episode" },
+    community: { label: "Join Community", url: "https://nyfai.vercel.app/community" },
+    academy: { label: "Explore Academy", url: "https://nyfai.vercel.app/upcoming" },
+    newsletter: { label: "Subscribe to Newsletter", url: "https://nyfai.vercel.app/media" },
+    solutions: { label: "View Solutions", url: "https://nyfai.vercel.app/solutions" },
+    media: { label: "Watch Media", url: "https://nyfai.vercel.app/media" },
+    contact: { label: "Contact Us", url: "https://nyfai.vercel.app/Sponsor" },
+    sponsor: { label: "Become a Sponsor", url: "https://nyfai.vercel.app/Sponsor" },
+    resources: { label: "Read Resources", url: "https://nyfai.vercel.app/resources" },
+    prompt_library: { label: "Open Prompt Library", url: "https://nyfai.vercel.app/resources/prompt-library" },
+    ai_reviews: { label: "AI Tool Reviews", url: "https://nyfai.vercel.app/resources/aiReviews" },
+    media_articles: { label: "Media Articles", url: "https://nyfai.vercel.app/media/Article" },
+    media_episodes: { label: "Course Episodes", url: "https://nyfai.vercel.app/media/Episode" },
 }
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })

@@ -395,7 +395,7 @@ export default function BlogDetail({ blogId, onBack, onBlogDeleted }) {
       )}
 
       {/* Header Section */}
-      <div className="bg-[#1a729c] text-white py-16 relative overflow-hidden">
+      {/* <div className="bg-[#1a729c] text-white py-16 relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-[#165881] to-[#165881]"></div>
         <div className="relative max-w-7xl mx-auto px-4 md:px-8">
           <div className="flex items-center justify-between mb-8">
@@ -555,6 +555,169 @@ export default function BlogDetail({ blogId, onBack, onBlogDeleted }) {
                   />
                 )}
               </div>
+            </div>
+          </div>
+        </div>
+      </div> */}
+      {/* Header Section */}
+      <div className="bg-background text-white py-16 relative overflow-hidden">
+        <div className="relative max-w-7xl mx-auto px-4 md:px-8">
+          <div className="flex items-center justify-between mb-8">
+            <button
+              onClick={onBack}
+              className="flex items-center gap-2 text-gray-300 hover:text-white transition-colors"
+            >
+              <ArrowLeft className="w-5 h-5" />
+              Back to Articles
+            </button>
+
+            <div className="flex items-center gap-3">
+              {!isEditMode ? (
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={() => setIsEditMode(true)}
+                    className="flex items-center gap-2 bg-white/20 hover:bg-white/30 px-4 py-2 rounded-lg transition-colors"
+                  >
+                    <Edit className="w-4 h-4" />
+                    Edit Article
+                  </button>
+                  <button
+                    onClick={() => setShowDeleteConfirm(true)}
+                    className="flex items-center gap-2 bg-red-600/20 hover:bg-red-600/30 px-4 py-2 rounded-lg transition-colors border border-red-500/20"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                    Delete
+                  </button>
+                </div>
+              ) : (
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={handleSave}
+                    disabled={saving}
+                    className="flex items-center gap-2 bg-green-600 hover:bg-green-700 disabled:bg-green-800 px-4 py-2 rounded-lg transition-colors"
+                  >
+                    <Save className="w-4 h-4" />
+                    {saving ? "Saving..." : "Save"}
+                  </button>
+                  <button
+                    onClick={handleCancelEdit}
+                    className="flex items-center gap-2 bg-red-600 hover:bg-red-700 px-4 py-2 rounded-lg transition-colors"
+                  >
+                    <X className="w-4 h-4" />
+                    Cancel
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-8 max-w-3xl mx-auto justify-center items-center">
+            {/* <div className="flex items-center gap-2 text-gray-300">
+              <Clock className="w-4 h-4" />
+              <span className="text-sm">{blog.readTime || "5 Min Read"}</span>
+            </div> */}
+
+            <div className="text-left ">
+              {isEditMode ? (
+                <input
+                  type="text"
+                  value={editData.title}
+                  onChange={(e) => setEditData({ ...editData, title: e.target.value })}
+                  className="text-4xl md:text-5xl font-bold mb-6 leading-tight bg-transparent border-b-2 border-white/30 focus:border-white outline-none w-full text-white placeholder-white/50"
+                  placeholder="Blog title..."
+                />
+              ) : (
+                <h1 className="text-4xl md:text-5xl font-bold mb-6 leading-tight">{blog.title}</h1>
+              )}
+
+              <div className="flex flex-col gap-3">
+                <div className="flex items-center gap-3">
+                  <span className="text-gray-300">By</span>
+                  <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
+                    <span className="text-sm font-medium text-white">
+                      {((isEditMode ? editData.author : blog.author) || "Unknown")
+                        .split(" ")
+                        .map((n) => n[0])
+                        .join("")}
+                    </span>
+                  </div>
+                  {isEditMode ? (
+                    <input
+                      type="text"
+                      value={editData.author}
+                      onChange={(e) => setEditData({ ...editData, author: e.target.value })}
+                      className="font-medium text-white bg-transparent border-b border-white/30 focus:border-white outline-none"
+                      placeholder="Author name..."
+                    />
+                  ) : (
+                    <span className="font-medium text-white">{blog.author}</span>
+                  )}
+                </div>
+                {isEditMode ? (
+                  <div className="flex items-center gap-2">
+                    <div className="relative">
+                      <input
+                        type="date"
+                        value={editData.date}
+                        onChange={(e) => setEditData({ ...editData, date: e.target.value })}
+                        className="bg-white/10 border border-white/30 rounded px-2 py-1 text-white text-sm focus:border-white outline-none"
+                      />
+                      <Calendar className="w-4 h-4 absolute right-2 top-1/2 transform -translate-y-1/2 text-white/70 pointer-events-none" />
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-gray-300">
+                    {blog.date ? new Date(blog.date).toLocaleDateString() : "No date"}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div>
+              {isEditMode ? (
+                <div className="space-y-4">
+                  <div className="flex gap-3">
+                    <input
+                      type="url"
+                      value={editData.image}
+                      onChange={(e) => setEditData({ ...editData, image: e.target.value })}
+                      className="flex-1 bg-white/10 border border-white/30 rounded-lg px-3 py-2 text-white placeholder-white/50 focus:border-white outline-none"
+                      placeholder="Image URL..."
+                    />
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageUpload}
+                      className="hidden"
+                      id="image-upload"
+                    />
+                    <label
+                      htmlFor="image-upload"
+                      className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg cursor-pointer transition-colors flex items-center gap-2 whitespace-nowrap"
+                    >
+                      <Upload className="w-4 h-4" />
+                      Upload
+                    </label>
+                  </div>
+                  <img
+                    src={editData.image || "/placeholder.svg"}
+                    alt="Preview"
+                    className="w-full h-[400px] md:h-[500px] object-cover rounded-lg"
+                    onError={(e) => {
+                      e.target.src = "/placeholder.svg"
+                    }}
+                  />
+                </div>
+              ) : (
+                <img
+                  src={blog.image || "/placeholder.svg"}
+                  alt={blog.title}
+                  className="w-full h-[400px] md:h-[500px] object-cover rounded-lg"
+                  onError={(e) => {
+                    e.target.src = "/placeholder.svg"
+                  }}
+                />
+              )}
             </div>
           </div>
         </div>

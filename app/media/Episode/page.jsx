@@ -726,7 +726,7 @@ export default function EpisodesPage() {
                 key={index}
                 className="overflow-hidden hover:shadow-lg transition-shadow flex flex-col h-full border-[#1a729c] relative"
               >
-                <div className="relative h-48 overflow-hidden">
+                <div className="relative w-full aspect-square overflow-hidden max-w-70 max-h-60">
                   <img
                     src={episode.image || "/placeholder.svg"}
                     alt={episode.title}
@@ -737,7 +737,7 @@ export default function EpisodesPage() {
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="absolute top-2 left-2 h-6 w-6 p-0  bg-gray-50 hover:bg-blue-100"
+                  className="absolute top-2 left-2 h-6 w-6 p-0  bg-gray-500 hover:bg-blue-100"
                   onClick={() => {
                     setEditingEpisode(episode);       // set current episode
                     setFormData({                     // pre-fill the form with episode data

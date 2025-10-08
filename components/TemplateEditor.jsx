@@ -701,14 +701,14 @@ export default function TemplateEditor({ initialSections = [], onChange, readOnl
 
       {/* Add Section Button */}
       <div className="relative">
-        <div className="add-section-button" onClick={() => setShowAddMenu(!showAddMenu)}>
+        <div className="flex flex-col items-center border-2 border-white" onClick={() => setShowAddMenu(!showAddMenu)}>
           <Plus className="w-6 h-6 mx-auto mb-2" />
           <p className="font-medium">Add Section</p>
           <p className="text-sm">Choose from templates below</p>
         </div>
 
         {showAddMenu && (
-          <div className="template-grid">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mt-4 p-4 border border-border rounded-lg bg-popover shadow-lg absolute z-10 w-full">
             {sectionTemplates.map((template) => {
               const Icon = template.icon
               return (
