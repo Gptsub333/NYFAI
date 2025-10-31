@@ -25,7 +25,7 @@ const mainNavigation = [
   { name: "Resources", href: "/resources" },
   { name: "Sponsor", href: "/sponsor" },
   { name: "About", href: "/about" },
-  { name: "Marketplace", href: "http://51.20.109.190" },
+  { name: "Marketplace", href: "https://agent.nyfai.com" },
 ]
 
 export function Header() {
@@ -80,7 +80,7 @@ export function Header() {
       // { label: "Tools & Template", href: "/resources/toolsTemplate" },
       { label: "AI Reviews", href: "/resources/aiReviews" },
     ],
-    Marketplace: [{ label: "AI agent Tools", href: "http://51.20.109.190" }],
+    Marketplace: [{ label: "AI agent Tools", href: "https://agent.nyfai.com" }],
   }
 
   const toggleMobileDropdown = (name) => {
